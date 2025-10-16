@@ -4,18 +4,18 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-		"dev": "vite dev",
-		"build": "vite build",
-		"preview": "vite preview",
-		"prepare": "svelte-kit sync || echo ''",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"format": "prettier --write .",
-		"lint": "prettier --check . && eslint .",
-		"db:push": "drizzle-kit push",
-		"db:generate": "drizzle-kit generate",
-		"db:migrate": "drizzle-kit migrate",
-		"db:studio": "drizzle-kit studio"
+		"dev": "node_modules/.bin/vite dev",
+		"build": "node_modules/.bin/vite build",
+		"preview": "node_modules/.bin/vite preview",
+		"prepare": "node_modules/.bin/svelte-kit sync || echo ''",
+		"check": "node_modules/.bin/svelte-kit sync && node_modules/.bin/svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "node_modules/.bin/svelte-kit sync && node_modules/.bin/svelte-check --tsconfig ./tsconfig.json --watch",
+		"format": "node_modules/.bin/prettier --write .",
+		"lint": "node_modules/.bin/prettier --check . && node_modules/.bin/eslint .",
+		"db:push": "node_modules/.bin/drizzle-kit push",
+		"db:generate": "node_modules/.bin/drizzle-kit generate",
+		"db:migrate": "node_modules/.bin/drizzle-kit migrate",
+		"db:studio": "node_modules/.bin/drizzle-kit studio"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.4.0",
@@ -44,6 +44,7 @@
 		"vite": "^7.1.7"
 	},
 	"dependencies": {
-		"@neondatabase/serverless": "^1.0.1"
+		"@neondatabase/serverless": "^1.0.1",
+		"autoprefixer": "^10.4.21"
 	}
 }
