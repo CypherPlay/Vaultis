@@ -5,7 +5,7 @@
 </script>
 
 <div class="flex flex-col min-h-screen">
-  <Header />
+  <Header title="Vaultis Dashboard" />
   <Navigation />
   <main class="flex-grow p-4">
     <slot />
