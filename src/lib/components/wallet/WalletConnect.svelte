@@ -1,12 +1,22 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { BrowserProvider, Contract, formatUnits, parseUnits } from 'ethers';
+  import { walletStore, connectWallet, disconnectWallet } from '$lib/stores/walletStore';
 
   let provider: BrowserProvider | undefined;
   let signer: any | undefined;
-  let address: string | undefined;
-  let network: string | undefined;
   let error: string | undefined;
+
+  // Reactive variables from the store
+  let isConnected: boolean;
+  let walletAddress: string | null;
+  let network: string | null;
+
+  walletStore.subscribe(state => {
+    isConnected = state.isConnected;
+    walletAddress = state.walletAddress;
+    network = state.network;
+  });
 
   const targetNetwork = {
     chainId: '0xaa36a7', // Sepolia
@@ -36,7 +46,7 @@
       if (!provider) return;
       const accounts = await window.ethereum.request({ method: 'eth_accounts' });
       if (accounts.length > 0) {
-        await connectWallet();
+        await handleConnectWallet();
       }
     } catch (err: any) {
       console.error('Error checking connection:', err);
@@ -44,7 +54,7 @@
     }
   }
 
-  async function connectWallet() {
+  async function handleConnectWallet() {
     try {
       if (!provider) {
         error = 'Wallet provider not found.';
@@ -52,9 +62,9 @@
       }
       await provider.send('eth_requestAccounts', []);
       signer = await provider.getSigner();
-      address = await signer.getAddress();
+      const address = await signer.getAddress();
       const { name } = await provider.getNetwork();
-      network = name;
+      connectWallet(address, name, provider); // Update the store
       error = undefined;
       checkNetwork();
     } catch (err: any) {
@@ -63,9 +73,8 @@
     }
   }
 
-  async function disconnectWallet() {
-    address = undefined;
-    network = undefined;
+  async function handleDisconnectWallet() {
+    disconnectWallet(); // Update the store
     signer = undefined;
     error = undefined;
   }
@@ -82,7 +91,7 @@
         });
         // If switch is successful, re-check network
         const { name } = await provider.getNetwork();
-        network = name;
+        connectWallet(walletAddress!, name, provider); // Update the store
         error = undefined;
       } catch (switchError: any) {
         if (switchError.code === 4902) {
@@ -94,7 +103,7 @@
             });
             // If added, re-check network
             const { name } = await provider.getNetwork();
-            network = name;
+            connectWallet(walletAddress!, name, provider); // Update the store
             error = undefined;
           } catch (addError: any) {
             console.error('Failed to add the network:', addError);
@@ -112,30 +121,30 @@
 
   function handleAccountsChanged(accounts: string[]) {
     if (accounts.length === 0) {
-      disconnectWallet();
+      handleDisconnectWallet();
     } else {
-      connectWallet();
+      handleConnectWallet();
     }
   }
 
   function handleChainChanged(chainId: string) {
     console.log('Chain changed:', chainId);
-    connectWallet();
+    handleConnectWallet();
   }
 
-  function shortenAddress(addr: string | undefined) {
+  function shortenAddress(addr: string | null) {
     if (!addr) return '';
     return `${addr.substring(0, 4)}...${addr.substring(addr.length - 3)}`;
   }
 </script>
 
 <div class="wallet-connect">
-  {#if address}
-    <p>Connected: {shortenAddress(address)}</p>
+  {#if isConnected}
+    <p>Connected: {shortenAddress(walletAddress)}</p>
     <p>Network: {network}</p>
-    <button on:click={disconnectWallet}>Disconnect</button>
+    <button on:click={handleDisconnectWallet}>Disconnect</button>
   {:else}
-    <button on:click={connectWallet}>Connect Wallet</button>
+    <button on:click={handleConnectWallet}>Connect Wallet</button>
   {/if}
 
   {#if error}
