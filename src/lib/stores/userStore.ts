@@ -1,18 +1,24 @@
-import { writable } from 'svelte/store';
+import { writable, type Writable } from 'svelte/store';
+
+export interface UserState {
+  sessionToken: string | null;
+  isAuthenticated: boolean;
+  riddleParticipation: Record<string, boolean>;
+}
 
 // Define the initial state for the user store
-const initialUserState = {
-  sessionToken: null as string | null,
+const initialUserState: UserState = {
+  sessionToken: null,
   isAuthenticated: false,
-  riddleParticipation: {} as Record<string, boolean>, // e.g., { 'riddleId1': true, 'riddleId2': false }
+  riddleParticipation: {},
 };
 
 // Create a writable store for user-related state
-const userStore = writable(initialUserState);
+const userStore: Writable<UserState> = writable(initialUserState);
 
 // Helper function to set the user's session token and authentication status
 function setSession(token: string) {
-  userStore.update(state => ({
+  userStore.update((state: UserState) => ({
     ...state,
     sessionToken: token,
     isAuthenticated: !!token,
@@ -21,7 +27,7 @@ function setSession(token: string) {
 
 // Helper function to update riddle participation status
 function updateRiddleParticipation(riddleId: string, participated: boolean) {
-  userStore.update(state => ({
+  userStore.update((state: UserState) => ({
     ...state,
     riddleParticipation: {
       ...state.riddleParticipation,

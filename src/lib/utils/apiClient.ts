@@ -1,4 +1,17 @@
-import { getAccessToken, refreshAccessToken } from '$lib/stores/userStore';
+import { user, type UserState } from '$lib/stores/userStore';
+
+let currentAccessToken: string | null = null;
+const unsubscribeUser = user.subscribe((u: UserState) => {
+  currentAccessToken = u.sessionToken;
+});
+
+// TODO: Implement refreshAccessToken logic if needed
+async function refreshAccessToken(): Promise<string | null> {
+  // For now, just return the current token. Real implementation would involve
+  // calling an auth endpoint to get a new token and updating the user store.
+  return currentAccessToken;
+}
+
 
 export type ApiResponse<T> = T;
 
@@ -19,8 +32,8 @@ export class ApiError extends Error {
  * It automatically attaches the access token, handles token refresh on 401 errors,
  * and normalizes network and API errors.
  *
- * Depends on `getAccessToken()` and `refreshAccessToken()` from `$lib/stores/userStore`.
- * `getAccessToken()` should synchronously return the current access token (or null/undefined).
+ * Depends on `currentAccessToken` and `refreshAccessToken()`.
+ * `currentAccessToken` should synchronously hold the current access token (or null/undefined).
  * `refreshAccessToken()` should be an async function that attempts to refresh the token
  * and returns the new token (or throws on failure).
  */
@@ -29,7 +42,7 @@ export async function apiFetch<T = any>(
   init?: RequestInit,
   _retried = false
 ): Promise<ApiResponse<T>> {
-  let token = getAccessToken();
+  let token = currentAccessToken;
   const headers = new Headers(init?.headers);
 
   if (token) {
@@ -44,9 +57,10 @@ export async function apiFetch<T = any>(
 
   let response: Response;
   try {
-    response = await fetch(input, { ...init, headers });
+    const opts: RequestInit = init ? { ...init, headers } : { headers };
+    response = await fetch(input, opts);
   } catch (err: any) {
-    throw new Error(`Network error: ${err.message}`);
+    throw new Error(`Network error: ${err?.message ?? 'Unknown network error'}`, { cause: err });
   }
 
   if (response.status === 401 && !_retried) {
@@ -59,29 +73,41 @@ export async function apiFetch<T = any>(
     }
   }
 
-  if (!response.ok) {
-    let errorBody: any;
-    try {
-      errorBody = await response.json();
-    } catch (e) {
-      errorBody = await response.text();
-    }
-    throw new ApiError(
-      response.status,
-      `API error ${response.status}: ${response.statusText || 'Unknown error'}`,
-      errorBody
-    );
-  }
+      const contentType = response.headers.get('content-type')?.toLowerCase() || '';
 
-  // Handle 204 No Content
-  if (response.status === 204) {
-    return null as ApiResponse<T>;
-  }
+      const isJson = contentType.includes('application/json') || contentType.includes('+json');
 
-  try {
-    return await response.json();
-  } catch (e) {
-    // If response is OK but not JSON, return as is (e.g., plain text, empty response)
-    return (await response.text()) as ApiResponse<T>;
-  }
+  
+
+      if (!response.ok) {
+
+        let errorBody: any = null;
+
+        try {
+
+          errorBody = isJson ? await response.json() : await response.text();
+
+        } catch (e) {
+
+          // ignore parse errors
+
+        }
+
+        throw new ApiError(response.status, `API error ${response.status}: ${response.statusText || 'Unknown error'}`, errorBody);
+
+      }
+
+  
+
+      if (isJson) {
+
+        return (await response.json()) as ApiResponse<T>;
+
+      }
+
+      const text = await response.text();
+
+      return text as unknown as ApiResponse<T>;
+
+  
 }
