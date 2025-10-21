@@ -17,7 +17,7 @@ const initialState: WalletState = {
 export const walletStore = writable<WalletState>(initialState);
 
 export const connectWallet = (address: string, networkName: string, walletProvider: any) => {
-  walletStore.update(state => ({
+  walletStore.update((state: WalletState) => ({
     ...state,
     isConnected: true,
     walletAddress: address,
