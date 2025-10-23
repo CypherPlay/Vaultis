@@ -29,7 +29,7 @@
 		"@types/node": "^22",
 		"drizzle-kit": "^0.31.4",
 		"drizzle-orm": "^0.44.5",
-		"eslint": "^9.36.0",
+		"eslint": "^9.38.0",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-svelte": "^3.12.4",
 		"globals": "^16.4.0",
@@ -41,7 +41,8 @@
 		"tailwindcss": "^4.1.13",
 		"typescript": "^5.9.2",
 		"typescript-eslint": "^8.44.1",
-		"vite": "^7.1.7"
+		"vite": "^7.1.7",
+		"vitest": "^4.0.1"
 	},
 	"dependencies": {
 		"@neondatabase/serverless": "^1.0.1",
