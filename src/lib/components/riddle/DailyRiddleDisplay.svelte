@@ -39,9 +39,16 @@
     <h2 class="text-3xl font-bold text-center mb-6 text-purple-400">Daily Riddle</h2>
 
     {#if loading}
-      <p class="text-center text-gray-400">Loading daily riddle...</p>
+      <div class="space-y-4 animate-pulse">
+        <div class="h-48 bg-gray-700 rounded-md"></div>
+        <div class="h-6 bg-gray-700 rounded-md w-3/4 mx-auto"></div>
+        <div class="h-6 bg-gray-700 rounded-md w-1/2 mx-auto"></div>
+      </div>
     {:else if error}
-      <p class="text-center text-red-500">{error}</p>
+      <div class="bg-red-900 border border-red-700 text-red-300 p-4 rounded-md text-center">
+        <p class="font-bold">Error:</p>
+        <p>{error}</p>
+      </div>
     {:else if riddle}
       <div class="space-y-4">
         {#if riddle.imageUrl}
@@ -51,7 +58,7 @@
         <p class="text-xl font-semibold text-center text-yellow-400">Prize Pool: {riddle.prizePool}</p>
       </div>
     {:else}
-      <p class="text-center text-gray-400">No daily riddle available today.</p>
+      <p class="text-center text-gray-400">No active riddle today.</p>
     {/if}
   </div>
 </div>
