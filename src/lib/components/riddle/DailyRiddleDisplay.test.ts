@@ -2,22 +2,18 @@ import { render, screen } from '@testing-library/svelte';
 import DailyRiddleDisplay from './DailyRiddleDisplay.svelte';
 import { vi } from 'vitest';
 
-// Mock the apiClient to control the riddle data
-vi.mock('$lib/utils/apiClient', () => ({
-  apiFetch: vi.fn(),
-}));
+import * as apiClient from '$lib/utils/apiClient';
 
-const mockApiFetch = vi.fn();
+// Mock the apiClient to control the riddle data
+vi.mock('$lib/utils/apiClient');
 
 describe('DailyRiddleDisplay', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    // Set the mock implementation for each test
-    require('$lib/utils/apiClient').apiFetch.mockImplementation(mockApiFetch);
   });
 
   test('renders loading state initially', () => {
-    mockApiFetch.mockReturnValue(new Promise(() => {})); // Never resolve to keep it loading
+    vi.mocked(apiClient.apiFetch).mockReturnValue(new Promise(() => {})); // Never resolve to keep it loading
     render(DailyRiddleDisplay);
     expect(screen.getByText('Loading daily riddle...')).toBeInTheDocument();
   });
@@ -30,7 +26,7 @@ describe('DailyRiddleDisplay', () => {
       imageAlt: 'A close-up of a needle eye',
       prizePool: '100 ETH',
     };
-    mockApiFetch.mockResolvedValue(riddleData);
+    vi.mocked(apiClient.apiFetch).mockResolvedValue(riddleData);
 
     render(DailyRiddleDisplay);
 
@@ -44,9 +40,7 @@ describe('DailyRiddleDisplay', () => {
       id: '2',
       text: 'I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?',
       imageUrl: '/images/riddle-echo.png',
-      prizePool: '50 ETH',
-    };
-    mockApiFetch.mockResolvedValue(riddleData);
+    vi.mocked(apiClient.apiFetch).mockResolvedValue(riddleData);
 
     render(DailyRiddleDisplay);
 
@@ -62,7 +56,7 @@ describe('DailyRiddleDisplay', () => {
       text: 'What is always in front of you but can’t be seen?',
       prizePool: '200 ETH',
     };
-    mockApiFetch.mockResolvedValue(riddleData);
+    vi.mocked(apiClient.apiFetch).mockResolvedValue(riddleData);
 
     render(DailyRiddleDisplay);
 
@@ -72,7 +66,7 @@ describe('DailyRiddleDisplay', () => {
 
   test('renders error message on API fetch failure', async () => {
     const errorMessage = 'Network error';
-    mockApiFetch.mockRejectedValue(new Error(errorMessage));
+    vi.mocked(apiClient.apiFetch).mockRejectedValue(new Error(errorMessage));
 
     render(DailyRiddleDisplay);
 
@@ -80,7 +74,7 @@ describe('DailyRiddleDisplay', () => {
   });
 
   test('renders no riddle available message if API returns null', async () => {
-    mockApiFetch.mockResolvedValue(null);
+    vi.mocked(apiClient.apiFetch).mockResolvedValue(null);
 
     render(DailyRiddleDisplay);
 
