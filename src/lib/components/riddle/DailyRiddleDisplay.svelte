@@ -6,6 +6,7 @@
     id: string;
     text: string;
     imageUrl?: string;
+    imageAlt?: string; // optional descriptive alt text for accessibility
     prizePool: string;
   }
 
@@ -44,7 +45,7 @@
     {:else if riddle}
       <div class="space-y-4">
         {#if riddle.imageUrl}
-          <img src={riddle.imageUrl} alt="Riddle illustration" class="w-full h-auto rounded-md object-cover mb-4" />
+          <img src={riddle.imageUrl} alt={riddle.imageAlt ?? ""} class="w-full h-auto rounded-md object-cover mb-4" />
         {/if}
         <p class="text-lg text-gray-200 text-center">{riddle.text}</p>
         <p class="text-xl font-semibold text-center text-yellow-400">Prize Pool: {riddle.prizePool}</p>
