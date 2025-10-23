@@ -4,10 +4,11 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
+		"test": "node_modules/.bin/vitest",
 		"dev": "node_modules/.bin/vite dev",
 		"build": "node_modules/.bin/vite build",
 		"preview": "node_modules/.bin/vite preview",
-		"prepare": "node_modules/.bin/svelte-kit sync || echo ''",
+		"prepare": "npx svelte-kit sync || echo ''",
 		"check": "node_modules/.bin/svelte-kit sync && node_modules/.bin/svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "node_modules/.bin/svelte-kit sync && node_modules/.bin/svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "node_modules/.bin/prettier --write .",
