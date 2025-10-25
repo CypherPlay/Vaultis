@@ -1,38 +1,39 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { get } from 'svelte/store';
+  import { apiFetch } from '$lib/utils/apiClient';
+  import { walletStore } from '$lib/stores/walletStore';
+  import { alertStore } from '$lib/stores/alertStore';
 
   export let entryFee: number = 5;
-  export let submitGuess: ((guess: string, entryFee: number) => Promise<any>) | undefined;
-
-  const dispatch = createEventDispatcher();
 
   let guess = '';
   let loading = false;
-  let errorMessage: string | null = null;
-  let successMessage: string | null = null;
 
   async function handleSubmit() {
-    errorMessage = null;
-    successMessage = null;
+    const walletState = get(walletStore);
+    const walletAddress = walletState.walletAddress;
+
+    if (!walletAddress) {
+      alertStore.addAlert('Please connect your wallet to submit a guess.', 'warning', 5000);
+      return;
+    }
 
     if (guess.trim() === '') {
-      errorMessage = 'Please enter your guess before submitting.';
+      alertStore.addAlert('Please enter your guess before submitting.', 'warning', 5000);
       return;
     }
 
     loading = true;
     try {
-      if (submitGuess) {
-        await submitGuess(guess.trim(), entryFee);
-      } else {
-        dispatch('submit', { guess: guess.trim(), entryFee });
-      }
-      successMessage = `Guess "${guess.trim()}" submitted! (Entry fee: ${entryFee} tokens)`;
+      await apiFetch('/api/v1/guess/submit', {
+        method: 'POST',
+        body: { walletAddress, guess: guess.trim() },
+      });
+      alertStore.addAlert(`Guess "${guess.trim()}" submitted! (Entry fee: ${entryFee} tokens)`, 'success', 5000);
       guess = '';
-      setTimeout(() => (successMessage = null), 5000); // Auto-dismiss after 5 seconds
     } catch (err: any) {
-      errorMessage = err?.message || 'Submission failed. Please try again.';
       console.error('Guess submission failed', err);
+      alertStore.addAlert(err?.message || 'Submission failed. Please try again.', 'error', 5000);
     } finally {
       loading = false;
     }
@@ -51,11 +52,7 @@
         bind:value={guess}
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring-3 focus:ring-indigo-200/50"
         placeholder="Enter your guess here"
-        aria-describedby={errorMessage ? 'guess-error' : undefined}
       />
-      {#if errorMessage}
-        <p id="guess-error" class="mt-2 text-sm text-red-600" role="alert">{errorMessage}</p>
-      {/if}
     </div>
     <div class="text-sm text-gray-500 mb-4">
       Entry Fee: ${entryFee} tokens per guess.
@@ -73,14 +70,4 @@
       {/if}
     </button>
   </form>
-
-  {#if successMessage}
-    <div
-      class="mt-4 p-3 rounded-md bg-green-100 text-green-800"
-      role="status"
-      aria-live="polite"
-    >
-      {successMessage}
-    </div>
-  {/if}
 </div>
