@@ -43,7 +43,13 @@ function createAlertStore() {
     error: (message: string, timeout?: number) => addAlert('error', message, timeout),
     info: (message: string, timeout?: number) => addAlert('info', message, timeout),
     remove: removeAlert,
-    clearAll: () => update(() => []), // Optional: to clear all alerts
+    clearAll: () =>
+      update((alerts) => {
+        for (const a of alerts) {
+          if (a.timeoutId) clearTimeout(a.timeoutId);
+        }
+        return [];
+      }),
   };
 }
 
