@@ -2,7 +2,7 @@
 	import Header from '../components/common/Header.svelte';
 	import Footer from '../components/common/Footer.svelte';
 	import NavMenu from '../components/common/NavMenu.svelte';
-	import AlertDisplay from '../components/common/AlertDisplay.svelte';
+	import Alert from '../components/common/Alert.svelte';
 </script>
 
 <div class="flex min-h-screen flex-col">
@@ -12,5 +12,5 @@
 		<slot />
 	</main>
 	<Footer />
-	<AlertDisplay />
+	<Alert />
 </div>

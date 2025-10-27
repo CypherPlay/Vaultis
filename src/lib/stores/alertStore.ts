@@ -1,30 +1,56 @@
 import { writable } from 'svelte/store';
 
+export type AlertType = 'success' | 'error' | 'info';
+
 export interface Alert {
   id: number;
+  type: AlertType;
   message: string;
-  type: 'success' | 'error' | 'info' | 'warning';
-  timeout?: number; // Milliseconds after which the alert should auto-dismiss
+  timeoutId?: ReturnType<typeof setTimeout>;
 }
 
-const createAlertStore = () => {
+const ALERT_TIMEOUT = 5000; // 5 seconds
+
+function createAlertStore() {
   const { subscribe, update } = writable<Alert[]>([]);
   let nextId = 0;
 
-  const addAlert = (message: string, type: Alert['type'], timeout?: number) => {
+  function addAlert(type: AlertType, message: string, timeout: number = ALERT_TIMEOUT) {
     const id = nextId++;
-    update((alerts) => [...alerts, { id, message, type, timeout }]);
+    const newAlert: Alert = { id, type, message };
 
-    if (timeout) {
-      setTimeout(() => removeAlert(id), timeout);
+    if (timeout > 0) {
+      const timeoutId = setTimeout(() => removeAlert(id), timeout);
+      newAlert.timeoutId = timeoutId;
     }
-  };
 
-  const removeAlert = (id: number) => {
-    update((alerts) => alerts.filter((alert) => alert.id !== id));
-  };
+    update(alerts => [...alerts, newAlert]);
+  }
 
-  return { subscribe, addAlert, removeAlert };
-};
+  function removeAlert(id: number) {
+    update(alerts => {
+      const alertToRemove = alerts.find(alert => alert.id === id);
+      if (alertToRemove?.timeoutId) {
+        clearTimeout(alertToRemove.timeoutId);
+      }
+      return alerts.filter(alert => alert.id !== id);
+    });
+  }
+
+  return {
+    subscribe,
+    success: (message: string, timeout?: number) => addAlert('success', message, timeout),
+    error: (message: string, timeout?: number) => addAlert('error', message, timeout),
+    info: (message: string, timeout?: number) => addAlert('info', message, timeout),
+    remove: removeAlert,
+    clearAll: () =>
+      update((alerts) => {
+        for (const a of alerts) {
+          if (a.timeoutId) clearTimeout(a.timeoutId);
+        }
+        return [];
+      }),
+  };
+}
 
 export const alertStore = createAlertStore();
