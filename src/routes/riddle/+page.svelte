@@ -5,7 +5,7 @@
 </script>
 
 <MainLayout>
-  <div class="flex flex-col items-center justify-center min-h-screen p-4">
+  <div class="flex flex-col items-center justify-center flex-1 p-4">
     <div class="w-full max-w-md mb-8">
       <DailyRiddleDisplay />
     </div>
