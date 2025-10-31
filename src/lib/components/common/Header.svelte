@@ -30,13 +30,13 @@
 
     <!-- Dynamic Title Section -->
     <div
-      class="mt-4 block w-full flex-grow text-center md:mt-0 md:flex md:w-auto md:items-center md:text-left"
+      class="mt-4 block w-full flex-grow text-center md:mt-0 md:flex md:w-auto md:items-center md:text-left md:flex-grow"
     >
       <h1 class="text-2xl font-bold">{title}</h1>
     </div>
 
     <!-- Wallet Connect Button -->
-    <div class="mt-4 w-full text-center md:mt-0 md:w-auto md:text-right">
+    <div class="mt-4 w-full flex-shrink-0 text-center md:mt-0 md:w-auto md:text-right">
       {#if isConnected}
         <span class="mr-2 text-sm text-white">Connected: {shortenAddress(walletAddress)}</span>
       {/if}
