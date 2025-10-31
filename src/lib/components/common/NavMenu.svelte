@@ -9,7 +9,7 @@
 
 	const navLinks = [
 		{ name: 'Home', href: '/' },
-		{ name: 'Daily Riddle', href: '/daily-riddle' },
+		{ name: 'Daily Riddle', href: '/riddle' },
 		{ name: 'Leaderboard', href: '/leaderboard' }
 	];
 </script>
