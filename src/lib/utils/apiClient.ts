@@ -1,5 +1,7 @@
 import { user, type UserState } from '$lib/stores/userStore';
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+
 let currentAccessToken: string | null = null;
 const unsubscribeUser = user.subscribe((u: UserState) => {
 	currentAccessToken = u.sessionToken;
@@ -60,9 +62,10 @@ export async function apiFetch<T = any>(
 	}
 
 	let response: Response;
+	const url = typeof input === 'string' && !input.startsWith('http') ? `${BASE_URL}${input}` : input;
 	try {
 		const opts: RequestInit = init ? { ...init, headers } : { headers };
-		response = await fetch(input, opts);
+		response = await fetch(url, opts);
 	} catch (err: any) {
 		throw new Error(`Network error: ${err?.message ?? 'Unknown network error'}`, { cause: err });
 	}
