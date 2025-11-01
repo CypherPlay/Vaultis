@@ -2,6 +2,16 @@
 
 Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
 
+## Environment Variables
+
+- `VITE_API_BASE_URL`: The base URL for API calls.
+  - **Purpose**: Specifies the endpoint for all backend API requests.
+  - **Format**: `protocol://host[:port][/base-path]`. No trailing slash is recommended.
+  - **Examples**:
+    - Local Development: `http://localhost:3000/api`
+    - Production: `https://api.yourdomain.com/api`
+  - **Usage**: For local development, create a `.env` file in the project root (from `.env.example`) and set this variable.
+
 ## Creating a project
 
 If you're seeing this, you've probably already done this step. Congrats!

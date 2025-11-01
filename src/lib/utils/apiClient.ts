@@ -1,6 +1,20 @@
 import { user, type UserState } from '$lib/stores/userStore';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+let BASE_URL: string = '';
+if (VITE_API_BASE_URL) {
+    try {
+        const url = new URL(VITE_API_BASE_URL);
+        BASE_URL = url.href.replace(/\/$/, ''); // Remove trailing slash
+    } catch (e) {
+        console.error(`Invalid VITE_API_BASE_URL: ${VITE_API_BASE_URL}. API calls will use relative URLs.`, e);
+    }
+}
+
+if (!BASE_URL) {
+    console.warn('VITE_API_BASE_URL is not set or is invalid. API calls will use relative URLs.');
+}
 
 let currentAccessToken: string | null = null;
 const unsubscribeUser = user.subscribe((u: UserState) => {
@@ -62,7 +76,13 @@ export async function apiFetch<T = any>(
 	}
 
 	let response: Response;
-	const url = typeof input === 'string' && !input.startsWith('http') ? `${BASE_URL}${input}` : input;
+	const url = (
+		typeof input === 'string' &&
+		!input.startsWith('http') &&
+		!input.startsWith('//')
+	)
+		? `${BASE_URL}${input.startsWith('/') ? input : '/' + input}`
+		: input;
 	try {
 		const opts: RequestInit = init ? { ...init, headers } : { headers };
 		response = await fetch(url, opts);
