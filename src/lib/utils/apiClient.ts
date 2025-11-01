@@ -2,29 +2,28 @@ import { user, type UserState } from '$lib/stores/userStore';
 
 let currentAccessToken: string | null = null;
 const unsubscribeUser = user.subscribe((u: UserState) => {
-  currentAccessToken = u.sessionToken;
+	currentAccessToken = u.sessionToken;
 });
 
 // TODO: Implement refreshAccessToken logic if needed
 async function refreshAccessToken(): Promise<string | null> {
-  // For now, just return the current token. Real implementation would involve
-  // calling an auth endpoint to get a new token and updating the user store.
-  return currentAccessToken;
+	// For now, just return the current token. Real implementation would involve
+	// calling an auth endpoint to get a new token and updating the user store.
+	return currentAccessToken;
 }
-
 
 export type ApiResponse<T> = T;
 
 export class ApiError extends Error {
-  status: number;
-  data?: any;
+	status: number;
+	data?: any;
 
-  constructor(status: number, message: string, data?: any) {
-    super(message);
-    this.name = 'ApiError';
-    this.status = status;
-    this.data = data;
-  }
+	constructor(status: number, message: string, data?: any) {
+		super(message);
+		this.name = 'ApiError';
+		this.status = status;
+		this.data = data;
+	}
 }
 
 /**
@@ -38,76 +37,71 @@ export class ApiError extends Error {
  * and returns the new token (or throws on failure).
  */
 export async function apiFetch<T = any>(
-  input: RequestInfo,
-  init?: RequestInit,
-  _retried = false
+	input: RequestInfo,
+	init?: RequestInit,
+	_retried = false
 ): Promise<ApiResponse<T>> {
-  let token = currentAccessToken;
-  const headers = new Headers(init?.headers);
+	let token = currentAccessToken;
+	const headers = new Headers(init?.headers);
 
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
-  }
+	if (token) {
+		headers.set('Authorization', `Bearer ${token}`);
+	}
 
-  // Set Content-Type for JSON bodies if not already set
-  if (init?.body && typeof init.body === 'object' && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json');
-    init.body = JSON.stringify(init.body);
-  }
+	// Set Content-Type for JSON bodies if not already set
+	if (
+		init?.body &&
+		typeof init.body === 'object' &&
+		!(init.body instanceof FormData) &&
+		!headers.has('Content-Type')
+	) {
+		headers.set('Content-Type', 'application/json');
+		init.body = JSON.stringify(init.body);
+	}
 
-  let response: Response;
-  try {
-    const opts: RequestInit = init ? { ...init, headers } : { headers };
-    response = await fetch(input, opts);
-  } catch (err: any) {
-    throw new Error(`Network error: ${err?.message ?? 'Unknown network error'}`, { cause: err });
-  }
+	let response: Response;
+	try {
+		const opts: RequestInit = init ? { ...init, headers } : { headers };
+		response = await fetch(input, opts);
+	} catch (err: any) {
+		throw new Error(`Network error: ${err?.message ?? 'Unknown network error'}`, { cause: err });
+	}
 
-  if (response.status === 401 && !_retried) {
-    try {
-      await refreshAccessToken();
-      // Retry the original request with the new token
-      return apiFetch<T>(input, init, true);
-    } catch (err) {
-      throw new Error('Authentication failed: token expired or refresh failed');
-    }
-  }
+	if (response.status === 401 && !_retried) {
+		try {
+			await refreshAccessToken();
+			// Retry the original request with the new token
+			return apiFetch<T>(input, init, true);
+		} catch (err) {
+			throw new Error('Authentication failed: token expired or refresh failed');
+		}
+	}
 
-      const contentType = response.headers.get('content-type')?.toLowerCase() || '';
+	const contentType = response.headers.get('content-type')?.toLowerCase() || '';
 
-      const isJson = contentType.includes('application/json') || contentType.includes('+json');
+	const isJson = contentType.includes('application/json') || contentType.includes('+json');
 
-  
+	if (!response.ok) {
+		let errorBody: any = null;
 
-      if (!response.ok) {
+		try {
+			errorBody = isJson ? await response.json() : await response.text();
+		} catch (e) {
+			// ignore parse errors
+		}
 
-        let errorBody: any = null;
+		throw new ApiError(
+			response.status,
+			`API error ${response.status}: ${response.statusText || 'Unknown error'}`,
+			errorBody
+		);
+	}
 
-        try {
+	if (isJson) {
+		return (await response.json()) as ApiResponse<T>;
+	}
 
-          errorBody = isJson ? await response.json() : await response.text();
+	const text = await response.text();
 
-        } catch (e) {
-
-          // ignore parse errors
-
-        }
-
-        throw new ApiError(response.status, `API error ${response.status}: ${response.statusText || 'Unknown error'}`, errorBody);
-
-      }
-
-  
-
-      if (isJson) {
-
-        return (await response.json()) as ApiResponse<T>;
-
-      }
-
-      const text = await response.text();
-
-      return text as unknown as ApiResponse<T>;
-
-  
+	return text as unknown as ApiResponse<T>;
 }

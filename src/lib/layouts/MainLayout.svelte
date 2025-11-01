@@ -8,7 +8,7 @@
 <div class="flex min-h-screen flex-col">
 	<Header title="Vaultis Dashboard" />
 	<NavMenu />
-	<main class="p-4 flex-grow max-w-screen-xl mx-auto">
+	<main class="p-4 max-w-screen-xl mx-auto flex-grow">
 		<slot />
 	</main>
 	<Footer />
