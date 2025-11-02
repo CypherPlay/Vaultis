@@ -4,7 +4,15 @@ const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 let BASE_URL: string = '';
 if (VITE_API_BASE_URL) {
-
+    try {
+        const url = new URL(VITE_API_BASE_URL);
+        BASE_URL = url.origin + url.pathname.replace(/\/$/, '');
+    } catch (e) {
+        throw new Error('Invalid VITE_API_BASE_URL in environment configuration');
+    }
+} else {
+    // Explicitly document that relative URLs will be used
+    console.warn('VITE_API_BASE_URL not set - using relative URLs (API must be same-origin)');
 }
 
 
