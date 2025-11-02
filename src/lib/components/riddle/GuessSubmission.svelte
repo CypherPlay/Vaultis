@@ -38,7 +38,7 @@
 			);
 			guess = '';
 		} catch (err: any) {
-			console.error('Guess submission failed', err);
+
 			alertStore.error(err?.message || 'Submission failed. Please try again.', 5000);
 		} finally {
 			loading = false;

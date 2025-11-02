@@ -6,15 +6,16 @@ let BASE_URL: string = '';
 if (VITE_API_BASE_URL) {
     try {
         const url = new URL(VITE_API_BASE_URL);
-        BASE_URL = url.href.replace(/\/$/, ''); // Remove trailing slash
+        BASE_URL = url.origin + url.pathname.replace(/\/$/, '');
     } catch (e) {
-        console.error(`Invalid VITE_API_BASE_URL: ${VITE_API_BASE_URL}. API calls will use relative URLs.`, e);
+        throw new Error('Invalid VITE_API_BASE_URL in environment configuration');
     }
+} else {
+    // Explicitly document that relative URLs will be used
+    console.warn('VITE_API_BASE_URL not set - using relative URLs (API must be same-origin)');
 }
 
-if (!BASE_URL) {
-    console.warn('VITE_API_BASE_URL is not set or is invalid. API calls will use relative URLs.');
-}
+
 
 let currentAccessToken: string | null = null;
 const unsubscribeUser = user.subscribe((u: UserState) => {
