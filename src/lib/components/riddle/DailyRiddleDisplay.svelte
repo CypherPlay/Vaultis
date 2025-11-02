@@ -27,7 +27,7 @@
 			} else {
 				error = 'An unknown error occurred.';
 			}
-			console.error(e);
+
 		} finally {
 			loading = false;
 		}

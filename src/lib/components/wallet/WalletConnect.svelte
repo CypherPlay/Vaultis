@@ -50,7 +50,7 @@
 				await handleConnectWallet();
 			}
 		} catch (err: any) {
-			console.error('Error checking connection:', err);
+
 			error = err.message;
 		}
 	}
@@ -69,7 +69,7 @@
 			error = undefined;
 			checkNetwork();
 		} catch (err: any) {
-			console.error('Error connecting wallet:', err);
+
 			error = err.message;
 		}
 	}
@@ -107,11 +107,10 @@
 						connectWallet(walletAddress!, name, provider); // Update the store
 						error = undefined;
 					} catch (addError: any) {
-						console.error('Failed to add the network:', addError);
+
 						error = `Failed to add ${targetNetwork.chainName}: ${addError.message}`;
 					}
-				} else {
-					console.error('Failed to switch network:', switchError);
+
 					error = `Failed to switch to ${targetNetwork.chainName}: ${switchError.message}`;
 				}
 			}
@@ -128,8 +127,7 @@
 		}
 	}
 
-	function handleChainChanged(chainId: string) {
-		console.log('Chain changed:', chainId);
+
 		handleConnectWallet();
 	}
 </script>
