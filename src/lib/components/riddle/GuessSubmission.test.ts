@@ -1,6 +1,24 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import GuessSubmission from './GuessSubmission.svelte';
 import { tick } from 'svelte';
+import { vi } from 'vitest';
+import * as apiClient from '$lib/utils/apiClient';
+import { walletStore } from '$lib/stores/walletStore';
+
+vi.mock('$lib/utils/apiClient', () => ({
+	apiFetch: vi.fn(),
+}));
+
+vi.mock('$lib/stores/walletStore', () => ({
+	walletStore: {
+		subscribe: vi.fn((fn) => {
+			fn({ walletAddress: '0xTestWalletAddress' });
+			return () => {};
+		}),
+		set: vi.fn(),
+		update: vi.fn(),
+	},
+}));
 
 describe('GuessSubmission', () => {
 	it('renders the component correctly', () => {
@@ -21,9 +39,9 @@ describe('GuessSubmission', () => {
 		);
 	});
 
-	it('calls submitGuess prop on successful submission and clears input', async () => {
-		const mockSubmitGuess = vi.fn(() => Promise.resolve());
-		render(GuessSubmission, { props: { submitGuess: mockSubmitGuess } });
+	it('calls apiFetch on successful submission and clears input', async () => {
+		const apiFetchSpy = vi.spyOn(apiClient, 'apiFetch').mockResolvedValueOnce({});
+		render(GuessSubmission);
 
 		const input = screen.getByPlaceholderText('Enter your guess here');
 		const submitButton = screen.getByText('Submit Guess');
@@ -31,7 +49,14 @@ describe('GuessSubmission', () => {
 		await fireEvent.input(input, { target: { value: 'test guess' } });
 		await fireEvent.click(submitButton);
 
-		expect(mockSubmitGuess).toHaveBeenCalledWith('test guess', 5);
+		expect(apiFetchSpy).toHaveBeenCalledWith(
+			'/api/guesses/submit',
+			expect.objectContaining({
+				method: 'POST',
+				body: JSON.stringify({ walletAddress: '0xTestWalletAddress', guess: 'test guess' }),
+				headers: { 'Content-Type': 'application/json' },
+			}),
+		);
 		await waitFor(() => expect(input).toHaveValue(''));
 		expect(
 			screen.getByText('Guess "test guess" submitted! (Entry fee: 5 tokens)')

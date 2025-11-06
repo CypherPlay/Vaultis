@@ -25,7 +25,7 @@
 
 		loading = true;
 		try {
-			await apiFetch('/api/v1/guess/submit', {
+			await apiFetch('/api/guesses/submit', {
 				method: 'POST',
 				body: JSON.stringify({ walletAddress, guess: guess.trim() }),
 				headers: {
