@@ -7,8 +7,11 @@ if (VITE_API_BASE_URL) {
 	try {
 		const url = new URL(VITE_API_BASE_URL);
 		BASE_URL = url.origin + url.pathname.replace(/\/$/, '');
-	} catch (e) {
-		throw new Error('Invalid VITE_API_BASE_URL in environment configuration');
+	} catch (e: unknown) {
+		if (e instanceof Error) {
+			throw new Error(`Invalid VITE_API_BASE_URL in environment configuration: ${e.message}`);
+		}
+		throw new Error('Invalid VITE_API_BASE_URL in environment configuration: An unknown error occurred');
 	}
 } else {
 	// Explicitly document that relative URLs will be used

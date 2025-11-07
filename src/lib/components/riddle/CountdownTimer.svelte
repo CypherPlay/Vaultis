@@ -4,8 +4,10 @@
 	export let endTimestamp: number; // Prop for the end timestamp
 
 	let remainingTime = -1;
-	    let interval: any; // Cast to any to resolve type conflict
-	    const dispatch = createEventDispatcher();	function updateCountdown() {
+	    let interval: ReturnType<typeof setInterval> | null = null;
+	    const dispatch = createEventDispatcher();
+
+	    function updateCountdown() {
 		const now = new Date().getTime();
 		remainingTime = Math.max(0, endTimestamp - now);
 

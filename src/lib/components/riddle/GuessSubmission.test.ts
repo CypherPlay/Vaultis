@@ -64,10 +64,10 @@ describe('GuessSubmission', () => {
 		expect(screen.getByRole('status')).toHaveTextContent(
 						'Guess "test guess" submitted! (Entry fee: 5 tokens)'
 					);
-				});
+		});
 			
 				it('shows an error message on failed submission and does not clear input', async () => {
-					const apiFetchSpy = vi.spyOn(apiClient, 'apiFetch').mockRejectedValueOnce(new Error('Network error'));
+					vi.spyOn(apiClient, 'apiFetch').mockRejectedValueOnce(new Error('Network error'));
 					render(GuessSubmission);
 			
 					const input = screen.getByPlaceholderText('Enter your guess here');
@@ -82,7 +82,7 @@ describe('GuessSubmission', () => {
 				});
 			
 				it('disables submit button while loading', async () => {
-					const apiFetchSpy = vi.spyOn(apiClient, 'apiFetch').mockImplementationOnce(() => new Promise((resolve) => setTimeout(resolve, 100))); // Simulate async
+					vi.spyOn(apiClient, 'apiFetch').mockImplementationOnce(() => new Promise((resolve) => setTimeout(resolve, 100))); // Simulate async
 					render(GuessSubmission);
 			
 					const input = screen.getByPlaceholderText('Enter your guess here');
