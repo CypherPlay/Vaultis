@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 
-  let remainingTime = 0;
+  let remainingTime = -1;
   let interval: number;
+  const dispatch = createEventDispatcher();
 
   // Calculate the end of the current day in UTC for the riddle reset
   function getRiddleEndTime(): Date {
@@ -20,7 +21,7 @@
 
     if (remainingTime === 0) {
       clearInterval(interval);
-      // Optionally, trigger a refresh or show a message that a new riddle is available
+      dispatch('riddleExpired');
     }
   }
 
@@ -51,7 +52,9 @@
 
 <div class="text-center p-4 bg-gray-800 text-white rounded-lg shadow-lg max-w-xs mx-auto">
   <h3 class="text-lg font-semibold mb-2">Next riddle unlocks in:</h3>
-  {#if remainingTime > 0}
+  {#if remainingTime === -1}
+    <p class="text-2xl font-bold text-gray-400">Loading...</p>
+  {:else if remainingTime > 0}
     <p class="text-4xl font-bold tracking-wide">{formattedTime}</p>
   {:else}
     <p class="text-2xl font-bold text-green-400">New riddle available!</p>
