@@ -1,5 +1,8 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
+  import { createEventDispatcher } from 'svelte';
+
+  const dispatch = createEventDispatcher();
 
   export let isCorrect: boolean;
   export let recordedTime: string | null = null; // e.g., "00:01:23"
@@ -7,7 +10,7 @@
 
   function handlePurchaseRetry() {
     // TODO: Implement logic to handle purchasing a retry
-    console.log('Purchase retry clicked!');
+    dispatch('retryPurchase');
     // This would typically emit an event or call a store action
   }
 </script>
