@@ -14,7 +14,7 @@
 		const walletAddress = walletState.walletAddress;
 
 		if (!walletAddress) {
-			alertStore.addAlert('Please connect your wallet to submit a guess.', 'warning', 5000);
+			alertStore.info('Please connect your wallet to submit a guess.', 5000);
 			return;
 		}
 
@@ -38,7 +38,6 @@
 			);
 			guess = '';
 		} catch (err: any) {
-
 			alertStore.error(err?.message || 'Submission failed. Please try again.', 5000);
 		} finally {
 			loading = false;
