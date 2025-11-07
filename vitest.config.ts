@@ -9,7 +9,8 @@ export default defineConfig({
 		environment: 'jsdom',
 		setupFiles: ['src/setupTests.ts'], // This file will contain the jest-dom setup
 		alias: {
-			'$lib': './src/lib'
-		}
+			$lib: './src/lib'
+		},
+		environmentMatchGlobs: [['src/**/*.svelte', 'jsdom']]
 	}
 });

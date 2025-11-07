@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { apiFetch, ApiError } from '$lib/utils/apiClient';
+	import CountdownTimer from './CountdownTimer.svelte';
 
 	interface DailyRiddle {
 		id: string;
@@ -8,17 +9,20 @@
 		imageUrl?: string;
 		imageAlt?: string; // optional descriptive alt text for accessibility
 		prizePool: string;
+		endTimestamp: string; // Assuming ISO string from API
 	}
 
 	let riddle: DailyRiddle | null = null;
 	let error: string | null = null;
 	let loading: boolean = true;
+	let riddleEndTime: number | null = null;
 
 	onMount(async () => {
 		try {
 			// Assuming an API endpoint for fetching the daily riddle
 			const response = await apiFetch<DailyRiddle>('/api/riddle/daily');
 			riddle = response;
+			riddleEndTime = new Date(riddle.endTimestamp).getTime();
 		} catch (e) {
 			if (e instanceof ApiError) {
 				error = `Failed to fetch riddle: ${e.message}`;
@@ -27,7 +31,6 @@
 			} else {
 				error = 'An unknown error occurred.';
 			}
-
 		} finally {
 			loading = false;
 		}
@@ -37,6 +40,9 @@
 <div class="bg-gray-900 text-white p-4 flex min-h-screen flex-col items-center justify-center">
 	<div class="bg-gray-800 p-8 rounded-lg shadow-lg max-w-md w-full">
 		<h2 class="text-3xl font-bold mb-6 text-purple-400 text-center">Daily Riddle</h2>
+		{#if riddleEndTime}
+			<CountdownTimer endTimestamp={riddleEndTime} />
+		{/if}
 
 		{#if loading}
 			<div class="space-y-4 animate-pulse">

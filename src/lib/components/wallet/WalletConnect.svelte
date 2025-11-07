@@ -34,8 +34,8 @@
 	onMount(() => {
 		if (window.ethereum) {
 			provider = new BrowserProvider(window.ethereum);
-			window.ethereum.on('accountsChanged', handleAccountsChanged);
-			window.ethereum.on('chainChanged', handleChainChanged);
+			window.ethereum?.on?.('accountsChanged', handleAccountsChanged);
+			window.ethereum?.on?.('chainChanged', handleChainChanged);
 			checkConnection();
 		} else {
 			error = 'MetaMask or a compatible wallet is not installed.';
@@ -45,9 +45,13 @@
 	async function checkConnection() {
 		try {
 			if (!provider) return;
-			const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-			if (accounts.length > 0) {
-						} catch (err: any) {
+			const accounts = await window.ethereum?.request({ method: 'eth_accounts' });
+			if (accounts && accounts.length > 0) {
+				// If accounts are found, update the wallet store (assuming connectWallet handles this)
+				// For now, just ensure the error is cleared if a connection is found
+				error = undefined;
+			}
+		} catch (err: any) {
 			if (import.meta.env.DEV) {
 				console.error('Wallet connection check failed:', err);
 			}
@@ -61,7 +65,7 @@
 				error = 'Wallet provider not found.';
 				return;
 			}
-			await provider.send('eth_requestAccounts', []);
+			await window.ethereum?.request({ method: 'eth_requestAccounts' });
 			signer = await provider.getSigner();
 			const address = await signer.getAddress();
 			const { name } = await provider.getNetwork();
@@ -88,7 +92,7 @@
 		if (chainId !== BigInt(targetNetwork.chainId)) {
 			error = `Wrong network. Please switch to ${targetNetwork.chainName}.`;
 			try {
-				await window.ethereum.request({
+				await window.ethereum?.request({
 					method: 'wallet_switchEthereumChain',
 					params: [{ chainId: targetNetwork.chainId }]
 				});
@@ -100,7 +104,7 @@
 				if (switchError.code === 4902) {
 					// This error code indicates that the chain has not been added to MetaMask.
 					try {
-						await window.ethereum.request({
+						await window.ethereum?.request({
 							method: 'wallet_addEthereumChain',
 							params: [targetNetwork]
 						});
@@ -136,7 +140,7 @@
 
 <div class="wallet-connect">
 	{#if isConnected}
-		<p>Connected: {shortAddress(walletAddress)}</p>
+		<p>Connected: {walletAddress ? shortAddress(walletAddress) : 'N/A'}</p>
 		<p>Network: {network}</p>
 		<button on:click={handleDisconnectWallet}>Disconnect</button>
 	{:else}

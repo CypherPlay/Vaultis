@@ -4,18 +4,19 @@ const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 let BASE_URL: string = '';
 if (VITE_API_BASE_URL) {
-    try {
-        const url = new URL(VITE_API_BASE_URL);
-        BASE_URL = url.origin + url.pathname.replace(/\/$/, '');
-    } catch (e) {
-        throw new Error('Invalid VITE_API_BASE_URL in environment configuration');
-    }
+	try {
+		const url = new URL(VITE_API_BASE_URL);
+		BASE_URL = url.origin + url.pathname.replace(/\/$/, '');
+	} catch (e: unknown) {
+		if (e instanceof Error) {
+			throw new Error(`Invalid VITE_API_BASE_URL in environment configuration: ${e.message}`);
+		}
+		throw new Error('Invalid VITE_API_BASE_URL in environment configuration: An unknown error occurred');
+	}
 } else {
-    // Explicitly document that relative URLs will be used
-    console.warn('VITE_API_BASE_URL not set - using relative URLs (API must be same-origin)');
+	// Explicitly document that relative URLs will be used
+	console.warn('VITE_API_BASE_URL not set - using relative URLs (API must be same-origin)');
 }
-
-
 
 let currentAccessToken: string | null = null;
 const unsubscribeUser = user.subscribe((u: UserState) => {
@@ -77,13 +78,10 @@ export async function apiFetch<T = any>(
 	}
 
 	let response: Response;
-	const url = (
-		typeof input === 'string' &&
-		!input.startsWith('http') &&
-		!input.startsWith('//')
-	)
-		? `${BASE_URL}${input.startsWith('/') ? input : '/' + input}`
-		: input;
+	const url =
+		typeof input === 'string' && !input.startsWith('http') && !input.startsWith('//')
+			? `${BASE_URL}${input.startsWith('/') ? input : '/' + input}`
+			: input;
 	try {
 		const opts: RequestInit = init ? { ...init, headers } : { headers };
 		response = await fetch(url, opts);
