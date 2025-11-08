@@ -4,15 +4,17 @@
 	export let endTimestamp: number; // Prop for the end timestamp
 
 	let remainingTime = -1;
-	    let interval: ReturnType<typeof setInterval> | null = null;
-	    const dispatch = createEventDispatcher();
+	let interval: ReturnType<typeof setInterval> | null = null;
+	const dispatch = createEventDispatcher();
 
-	    function updateCountdown() {
+	function updateCountdown() {
 		const now = new Date().getTime();
 		remainingTime = Math.max(0, endTimestamp - now);
 
 		if (remainingTime === 0) {
-			clearInterval(interval);
+			if (interval) {
+				clearInterval(interval);
+			}
 			dispatch('riddleExpired');
 		}
 	}
@@ -23,7 +25,9 @@
 	});
 
 	onDestroy(() => {
-		clearInterval(interval);
+		if (interval) {
+			clearInterval(interval);
+		}
 	});
 
 	// Reactive declaration to format the time

@@ -11,7 +11,9 @@ if (VITE_API_BASE_URL) {
 		if (e instanceof Error) {
 			throw new Error(`Invalid VITE_API_BASE_URL in environment configuration: ${e.message}`);
 		}
-		throw new Error('Invalid VITE_API_BASE_URL in environment configuration: An unknown error occurred');
+		throw new Error(
+			'Invalid VITE_API_BASE_URL in environment configuration: An unknown error occurred'
+		);
 	}
 } else {
 	// Explicitly document that relative URLs will be used
