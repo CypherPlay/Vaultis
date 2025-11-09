@@ -1,10 +1,12 @@
 import { writable } from 'svelte/store';
 
+import type { Provider } from 'ethers';
+
 interface WalletState {
 	isConnected: boolean;
 	walletAddress: string | null;
 	network: string | null;
-	provider: any | null; // Consider a more specific type if known (e.g., ethers.Provider, Web3Provider)
+	provider: Provider | null; // Consider a more specific type if known (e.g., ethers.Provider, Web3Provider)
 }
 
 const initialState: WalletState = {
@@ -16,7 +18,7 @@ const initialState: WalletState = {
 
 export const walletStore = writable<WalletState>(initialState);
 
-export const connectWallet = (address: string, networkName: string, walletProvider: any) => {
+export const connectWallet = (address: string, networkName: string, walletProvider: Provider) => {
 	walletStore.update((state: WalletState) => ({
 		...state,
 		isConnected: true,

@@ -1,5 +1,3 @@
-import { user, type UserState } from '$lib/stores/userStore';
-
 const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 let BASE_URL: string = '';
@@ -20,11 +18,6 @@ if (VITE_API_BASE_URL) {
 	console.warn('VITE_API_BASE_URL not set - using relative URLs (API must be same-origin)');
 }
 
-let currentAccessToken: string | null = null;
-const unsubscribeUser = user.subscribe((u: UserState) => {
-	currentAccessToken = u.sessionToken;
-});
-
 // TODO: Implement refreshAccessToken logic if needed
 async function refreshAccessToken(): Promise<string | null> {
 	// For now, just return the current token. Real implementation would involve
@@ -32,13 +25,13 @@ async function refreshAccessToken(): Promise<string | null> {
 	return currentAccessToken;
 }
 
-export type ApiResponse<T> = T;
+export type ApiResponse<T = unknown> = T;
 
 export class ApiError extends Error {
 	status: number;
-	data?: any;
+	data?: unknown;
 
-	constructor(status: number, message: string, data?: any) {
+	constructor(status: number, message: string, data?: unknown) {
 		super(message);
 		this.name = 'ApiError';
 		this.status = status;
@@ -56,12 +49,12 @@ export class ApiError extends Error {
  * `refreshAccessToken()` should be an async function that attempts to refresh the token
  * and returns the new token (or throws on failure).
  */
-export async function apiFetch<T = any>(
+export async function apiFetch<T = unknown>(
 	input: RequestInfo,
 	init?: RequestInit,
 	_retried = false
 ): Promise<ApiResponse<T>> {
-	let token = currentAccessToken;
+	const token = currentAccessToken;
 	const headers = new Headers(init?.headers);
 
 	if (token) {
@@ -87,8 +80,11 @@ export async function apiFetch<T = any>(
 	try {
 		const opts: RequestInit = init ? { ...init, headers } : { headers };
 		response = await fetch(url, opts);
-	} catch (err: any) {
-		throw new Error(`Network error: ${err?.message ?? 'Unknown network error'}`, { cause: err });
+	} catch (err: unknown) {
+		throw new Error(
+			`Network error: ${err instanceof Error ? err.message : 'Unknown network error'}`,
+			{ cause: err }
+		);
 	}
 
 	if (response.status === 401 && !_retried) {
@@ -96,7 +92,7 @@ export async function apiFetch<T = any>(
 			await refreshAccessToken();
 			// Retry the original request with the new token
 			return apiFetch<T>(input, init, true);
-		} catch (err) {
+		} catch {
 			throw new Error('Authentication failed: token expired or refresh failed');
 		}
 	}
@@ -106,11 +102,11 @@ export async function apiFetch<T = any>(
 	const isJson = contentType.includes('application/json') || contentType.includes('+json');
 
 	if (!response.ok) {
-		let errorBody: any = null;
+		let errorBody: unknown = null;
 
 		try {
 			errorBody = isJson ? await response.json() : await response.text();
-		} catch (e) {
+		} catch {
 			// ignore parse errors
 		}
 

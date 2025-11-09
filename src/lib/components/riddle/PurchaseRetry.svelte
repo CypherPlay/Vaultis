@@ -1,71 +1,156 @@
 <script lang="ts">
-  import { userStore } from '$lib/stores/userStore';
-  import { walletStore } from '$lib/stores/walletStore';
-  import { apiClient } from '$lib/utils/apiClient';
-  import { createAlert } from '$lib/stores/alertStore';
+	import { walletStore } from '$lib/stores/walletStore';
+	import { apiFetch, ApiError } from '$lib/utils/apiClient';
+	import { ethers } from 'ethers';
+	import { createEventDispatcher } from 'svelte';
+	import { alertStore } from '$lib/stores/alertStore';
 
-  export let riddleId: string;
-  export let onRetrySuccess: () => void;
+	export let riddleId: string;
+	export let retryCost: number; // Cost in $Y tokens
 
-  let purchasing = false;
+	const dispatch = createEventDispatcher();
 
-  async function purchaseRetry() {
-    if (purchasing) {
-      return;
-    }
-    purchasing = true;
+	let isLoading = false;
+	let transactionHash: string | null = null;
+	let error: string | null = null;
+	let success = false;
 
-    if (!$walletStore.connected) {
-      createAlert('Please connect your wallet to purchase a retry.', 'error');
-      return;
-    }
+	// Placeholder for $Y Token Contract ABI and Address
+	// In a real application, these would be imported from a contracts package or configuration.
+	const Y_TOKEN_ADDRESS = '0x...'; // Replace with actual $Y token contract address
+	const Y_TOKEN_ABI = [
+		'function approve(address spender, uint256 amount) returns (bool)',
+		'function transfer(address to, uint256 amount) returns (bool)',
+		'function balanceOf(address account) view returns (uint256)'
+	];
 
-    try {
-      // TODO: Implement on-chain transaction/payment flow here.
-      // This would involve calling the wallet/provider to create and wait for the payment/tx receipt.
-      // For now, we'll simulate a transaction hash.
-      const transactionHash = '0x_simulated_transaction_hash'; // Replace with actual transaction hash
+	// Placeholder for Riddle Contract Address (where the actual purchase function would be)
+	const RIDDLE_CONTRACT_ADDRESS = '0x...'; // Replace with actual Riddle contract address
+	const RIDDLE_CONTRACT_ABI = [
+		'function purchaseRetry(uint256 riddleId, uint256 cost) returns (bool)'
+	];
 
-      // Call the backend to record the retry purchase and verify the transaction
-      const response = await apiClient.post(`/riddles/${riddleId}/purchase-retry`, { transactionHash });
+	async function handlePurchaseRetry() {
+		isLoading = true;
+		error = null;
+		transactionHash = null;
+		success = false;
 
-      if (response.status === 200 && response.data && typeof response.data.retries === 'number') {
-        userStore.update(user => {
-          if (user) {
-            return { ...user, retries: response.data.retries };
-          }
-          return user;
-        });
-        createAlert('Retry purchased successfully!', 'success');
-        onRetrySuccess();
-      } else {
-        console.error('Error purchasing retry: Invalid API response', response);
-        createAlert('Failed to purchase retry. Please try again.', 'error');
-      }
-    } catch (error) {
-      console.error('Error purchasing retry:', error);
-      createAlert('Failed to purchase retry. Please try again.', 'error');
-    } finally {
-      purchasing = false;
-    }
-  }
+		const walletProvider = $walletStore.provider;
+		const walletAddress = $walletStore.walletAddress;
+
+		if (!walletProvider || !walletAddress) {
+			error = 'Wallet not connected.';
+			alertStore.addAlert({ message: error, type: 'error' });
+			isLoading = false;
+			return;
+		}
+
+		try {
+			const provider = new ethers.BrowserProvider(walletProvider);
+			const signer = await provider.getSigner();
+
+			// 1. Approve the Riddle Contract to spend $Y tokens
+			const yTokenContract = new ethers.Contract(Y_TOKEN_ADDRESS, Y_TOKEN_ABI, signer);
+			const amountToApprove = ethers.parseUnits(retryCost.toString(), 18); // Assuming 18 decimals for $Y token
+
+			alertStore.addAlert({ message: `Approving ${retryCost} $Y tokens...`, type: 'info' });
+			const approveTx = await yTokenContract.approve(RIDDLE_CONTRACT_ADDRESS, amountToApprove);
+			transactionHash = approveTx.hash;
+			await approveTx.wait();
+			alertStore.addAlert({ message: 'Approval successful!', type: 'success' });
+
+			// 2. Call the Riddle Contract's purchaseRetry function
+			const riddleContract = new ethers.Contract(
+				RIDDLE_CONTRACT_ADDRESS,
+				RIDDLE_CONTRACT_ABI,
+				signer
+			);
+
+			alertStore.addAlert({
+				message: `Purchasing retry for Riddle ID: ${riddleId}...`,
+				type: 'info'
+			});
+			const purchaseTx = await riddleContract.purchaseRetry(riddleId, amountToApprove);
+			transactionHash = purchaseTx.hash;
+			await purchaseTx.wait();
+			alertStore.addAlert({ message: 'Retry purchase successful!', type: 'success' });
+
+			// 3. Update backend to reflect riddle participation status
+			await apiFetch(`/api/riddle/${riddleId}/purchase-retry`, {
+				method: 'POST',
+				body: {
+					riddleId,
+					transactionHash: purchaseTx.hash,
+					walletAddress
+				}
+			});
+
+			success = true;
+			alertStore.addAlert({ message: 'Riddle participation status updated!', type: 'success' });
+			dispatch('purchaseSuccess'); // Notify parent component of success
+		} catch (e: unknown) {
+			if (e instanceof ApiError) {
+				error = `API Error: ${e.message} (Status: ${e.status})`;
+			} else if (e instanceof Error) {
+				error = e.message;
+			} else {
+				error = 'An unknown error occurred during purchase.';
+			}
+			alertStore.addAlert({ message: error, type: 'error' });
+			console.error('Purchase retry error:', e);
+		} finally {
+			isLoading = false;
+		}
+	}
 </script>
 
-<div class="flex flex-col items-center gap-4 p-4 bg-gray-800 rounded-lg shadow-lg">
-  <p class="text-lg text-white">Out of guesses? Purchase a retry!</p>
-  <button
-    on:click={purchaseRetry}
-    disabled={purchasing || !$walletStore.connected}
-    class="px-6 py-3 text-white font-bold rounded-lg transition-colors duration-200
-           {$walletStore.connected ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gray-500 cursor-not-allowed'}
-           focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
-  >
-    {#if purchasing}
-      Purchasing...
-    {:else if !$walletStore.connected}
-      Connect Wallet to Purchase
-    {:else}
-      Purchase Retry (1 MATIC)
-    {/if}
-  </button>
+<div class="p-4 bg-gray-800 rounded-lg shadow-md text-white">
+	<h3 class="text-xl font-semibold mb-4">Purchase Riddle Retry</h3>
+
+	{#if !$walletStore.isConnected}
+		<p class="text-red-400 mb-4">Please connect your wallet to purchase a retry.</p>
+	{:else if success}
+		<p class="text-green-400 mb-4">
+			Successfully purchased a retry! You can now attempt the riddle again.
+		</p>
+		<p class="text-sm text-gray-400">Transaction Hash: {transactionHash}</p>
+	{:else}
+		<p class="mb-4">
+			You can purchase another attempt for this riddle for <span class="font-bold"
+				>{retryCost} $Y tokens</span
+			>.
+		</p>
+		<p class="text-sm text-gray-400 mb-4">
+			This will allow you to submit another guess for Riddle ID: {riddleId}.
+		</p>
+
+		{#if error}
+			<p class="text-red-400 mb-4">Error: {error}</p>
+		{/if}
+
+		<button
+			on:click={handlePurchaseRetry}
+			disabled={isLoading || !$walletStore.isConnected}
+			class="py-2 px-4 bg-blue-600 hover:bg-blue-700 rounded-md font-semibold disabled:bg-gray-600 w-full transition-colors
+			duration-200 disabled:cursor-not-allowed"
+		>
+			{#if isLoading}
+				Processing...
+			{:else}
+				Purchase Retry
+			{/if}
+		</button>
+
+		{#if transactionHash}
+			<p class="mt-4 text-sm text-gray-400">
+				Transaction in progress: <a
+					href="https://etherscan.io/tx/{transactionHash}"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="text-blue-400 hover:underline">View on Etherscan</a
+				>
+			</p>
+		{/if}
+	{/if}
 </div>
