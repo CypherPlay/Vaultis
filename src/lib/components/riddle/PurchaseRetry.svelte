@@ -7,6 +7,8 @@
 
 	export let riddleId: string;
 	export let retryCost: number; // Cost in $Y tokens
+	export let yTokenAddress: string;
+	export let riddleContractAddress: string;
 
 	const dispatch = createEventDispatcher();
 
@@ -15,17 +17,12 @@
 	let error: string | null = null;
 	let success = false;
 
-	// Placeholder for $Y Token Contract ABI and Address
-	// In a real application, these would be imported from a contracts package or configuration.
-	const Y_TOKEN_ADDRESS = '0x...'; // Replace with actual $Y token contract address
 	const Y_TOKEN_ABI = [
 		'function approve(address spender, uint256 amount) returns (bool)',
 		'function transfer(address to, uint256 amount) returns (bool)',
 		'function balanceOf(address account) view returns (uint256)'
 	];
 
-	// Placeholder for Riddle Contract Address (where the actual purchase function would be)
-	const RIDDLE_CONTRACT_ADDRESS = '0x...'; // Replace with actual Riddle contract address
 	const RIDDLE_CONTRACT_ABI = [
 		'function purchaseRetry(uint256 riddleId, uint256 cost) returns (bool)'
 	];
@@ -46,23 +43,42 @@
 			return;
 		}
 
+		// Validate contract addresses
+		if (!yTokenAddress || !ethers.isAddress(yTokenAddress)) {
+			error = 'Invalid or missing Y Token contract address.';
+			alertStore.addAlert({ message: error, type: 'error' });
+			isLoading = false;
+			return;
+		}
+		if (!riddleContractAddress || !ethers.isAddress(riddleContractAddress)) {
+			error = 'Invalid or missing Riddle contract address.';
+			alertStore.addAlert({ message: error, type: 'error' });
+			isLoading = false;
+			return;
+		}
+
+		// Developer warning for dummy addresses
+		if (yTokenAddress === '0x...' || riddleContractAddress === '0x...') {
+			console.warn('Using dummy contract addresses. Please replace with real addresses for production.');
+		}
+
 		try {
 			const provider = new ethers.BrowserProvider(walletProvider);
 			const signer = await provider.getSigner();
 
 			// 1. Approve the Riddle Contract to spend $Y tokens
-			const yTokenContract = new ethers.Contract(Y_TOKEN_ADDRESS, Y_TOKEN_ABI, signer);
+			const yTokenContract = new ethers.Contract(yTokenAddress, Y_TOKEN_ABI, signer);
 			const amountToApprove = ethers.parseUnits(retryCost.toString(), 18); // Assuming 18 decimals for $Y token
 
 			alertStore.addAlert({ message: `Approving ${retryCost} $Y tokens...`, type: 'info' });
-			const approveTx = await yTokenContract.approve(RIDDLE_CONTRACT_ADDRESS, amountToApprove);
+			const approveTx = await yTokenContract.approve(riddleContractAddress, amountToApprove);
 			transactionHash = approveTx.hash;
 			await approveTx.wait();
 			alertStore.addAlert({ message: 'Approval successful!', type: 'success' });
 
 			// 2. Call the Riddle Contract's purchaseRetry function
 			const riddleContract = new ethers.Contract(
-				RIDDLE_CONTRACT_ADDRESS,
+				riddleContractAddress,
 				RIDDLE_CONTRACT_ABI,
 				signer
 			);
