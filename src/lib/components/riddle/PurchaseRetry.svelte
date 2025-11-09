@@ -10,32 +10,38 @@
   let purchasing = false;
 
   async function purchaseRetry() {
+    if (purchasing) {
+      return;
+    }
+    purchasing = true;
+
     if (!$walletStore.connected) {
       createAlert('Please connect your wallet to purchase a retry.', 'error');
       return;
     }
 
-    purchasing = true;
     try {
-      // Simulate a transaction or API call to purchase a retry
-      // In a real application, this would involve interacting with a smart contract
-      // or a backend API that handles the transaction.
-      // For now, we'll simulate a successful purchase.
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
+      // TODO: Implement on-chain transaction/payment flow here.
+      // This would involve calling the wallet/provider to create and wait for the payment/tx receipt.
+      // For now, we'll simulate a transaction hash.
+      const transactionHash = '0x_simulated_transaction_hash'; // Replace with actual transaction hash
 
-      // Call the backend to record the retry purchase
-      await apiClient.post(`/riddles/${riddleId}/purchase-retry`);
+      // Call the backend to record the retry purchase and verify the transaction
+      const response = await apiClient.post(`/riddles/${riddleId}/purchase-retry`, { transactionHash });
 
-      // Update user store with new retry count
-      userStore.update(user => {
-        if (user) {
-          return { ...user, retries: (user.retries || 0) + 1 };
-        }
-        return user;
-      });
-
-      createAlert('Retry purchased successfully!', 'success');
-      onRetrySuccess();
+      if (response.status === 200 && response.data && typeof response.data.retries === 'number') {
+        userStore.update(user => {
+          if (user) {
+            return { ...user, retries: response.data.retries };
+          }
+          return user;
+        });
+        createAlert('Retry purchased successfully!', 'success');
+        onRetrySuccess();
+      } else {
+        console.error('Error purchasing retry: Invalid API response', response);
+        createAlert('Failed to purchase retry. Please try again.', 'error');
+      }
     } catch (error) {
       console.error('Error purchasing retry:', error);
       createAlert('Failed to purchase retry. Please try again.', 'error');
