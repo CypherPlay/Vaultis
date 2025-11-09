@@ -73,14 +73,15 @@
 		}
 
 		// Developer warning for dummy addresses
-		if (yTokenAddress === '0x...' || riddleContractAddress === '0x...') {
-			console.warn('Using dummy contract addresses. Please replace with real addresses for production.');
-		}
-
-					try {
+				if (yTokenAddress === '0x...' || riddleContractAddress === '0x...') {
+					console.warn('Using dummy contract addresses. Please replace with real addresses for production.');
+				}
+		
+				try {
 					const provider = new ethers.BrowserProvider(walletProvider);
 					const signer = await provider.getSigner();
-		
+					const network = await provider.getNetwork();
+					explorerUrl = getExplorerUrl(Number(network.chainId));
 					// Fetch Y token decimals dynamically
 					yTokenDecimals = await fetchYTokenDecimals(provider, yTokenAddress);
 		
@@ -153,7 +154,7 @@
 				}
 			}
 		
-			$: explorerUrl = $walletStore.provider ? getExplorerUrl($walletStore.chainId) : 'https://etherscan.io';</script>
+			let explorerUrl: string = 'https://etherscan.io';</script>
 
 <div class="p-4 bg-gray-800 rounded-lg shadow-md text-white">
 	<h3 class="text-xl font-semibold mb-4">Purchase Riddle Retry</h3>
