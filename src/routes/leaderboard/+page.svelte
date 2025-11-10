@@ -3,12 +3,18 @@
 
   let activeTab: 'daily' | 'all-time' = 'daily';
   let loading = true;
-  let dailyWinners: any[] = []; // Placeholder for daily winners data
-  let allTimeRanks: any[] = []; // Placeholder for all-time ranks data
+  interface LeaderboardEntry {
+    rank: number;
+    name: string;
+    score: number;
+  }
+
+  let dailyWinners: LeaderboardEntry[] = []; // Placeholder for daily winners data
+  let allTimeRanks: LeaderboardEntry[] = []; // Placeholder for all-time ranks data
 
   onMount(() => {
     // Simulate data loading
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       dailyWinners = [
         { rank: 1, name: 'Alice', score: 1500 },
         { rank: 2, name: 'Bob', score: 1450 },
@@ -21,6 +27,8 @@
       ];
       loading = false;
     }, 1500);
+
+    return () => clearTimeout(timeoutId);
   });
 
   function setActiveTab(tab: 'daily' | 'all-time') {
@@ -33,27 +41,33 @@
 
   <div class="flex justify-center mb-6">
     <div class="tabs tabs-boxed bg-base-200">
-      <a
+      <button
+        type="button"
         class="tab tab-lg"
         class:tab-active="{activeTab === 'daily'}"
         on:click="{() => setActiveTab('daily')}"
       >
         Daily Winners
-      </a>
-      <a
+      </button>
+      <button
+        type="button"
         class="tab tab-lg"
         class:tab-active="{activeTab === 'all-time'}"
         on:click="{() => setActiveTab('all-time')}"
       >
         All-Time Ranks
-      </a>
+      </button>
     </div>
   </div>
 
   {#if loading}
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 animate-pulse">
-      <div class="bg-base-200 p-4 rounded-lg h-48"></div>
-      <div class="bg-base-200 p-4 rounded-lg h-48"></div>
+    <div class="grid grid-cols-1 gap-4 animate-pulse">
+      <div class="bg-base-200 shadow-xl rounded-lg p-4 sm:p-6">
+        <div class="h-6 bg-base-300 rounded w-3/4 mb-4"></div>
+        <div class="h-4 bg-base-300 rounded w-full mb-2"></div>
+        <div class="h-4 bg-base-300 rounded w-full mb-2"></div>
+        <div class="h-4 bg-base-300 rounded w-1/2"></div>
+      </div>
     </div>
   {:else}
     {#if activeTab === 'daily'}
