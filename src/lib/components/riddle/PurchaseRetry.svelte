@@ -27,7 +27,10 @@
 	let yTokenDecimals: number = 18; // Default to 18, will be fetched dynamically
 
 	// Helper to get token decimals
-	async function fetchYTokenDecimals(provider: ethers.BrowserProvider, address: string): Promise<number> {
+	async function fetchYTokenDecimals(
+		provider: ethers.BrowserProvider,
+		address: string
+	): Promise<number> {
 		try {
 			const tokenContract = new ethers.Contract(address, Y_TOKEN_ABI, provider);
 			const decimals = await tokenContract.decimals();
@@ -73,88 +76,91 @@
 		}
 
 		// Developer warning for dummy addresses
-				if (yTokenAddress === '0x...' || riddleContractAddress === '0x...') {
-					console.warn('Using dummy contract addresses. Please replace with real addresses for production.');
+		if (yTokenAddress === '0x...' || riddleContractAddress === '0x...') {
+			console.warn(
+				'Using dummy contract addresses. Please replace with real addresses for production.'
+			);
+		}
+
+		try {
+			const provider = new ethers.BrowserProvider(walletProvider);
+			const signer = await provider.getSigner();
+			const network = await provider.getNetwork();
+			explorerUrl = getExplorerUrl(Number(network.chainId));
+			// Fetch Y token decimals dynamically
+			yTokenDecimals = await fetchYTokenDecimals(provider, yTokenAddress);
+
+			// 1. Approve the Riddle Contract to spend $Y tokens
+			const yTokenContract = new ethers.Contract(yTokenAddress, Y_TOKEN_ABI, signer);
+			const amountToApprove = ethers.parseUnits(retryCost.toString(), yTokenDecimals);
+
+			alertStore.addAlert({ message: `Approving ${retryCost} $Y tokens...`, type: 'info' });
+			const approveTx = await yTokenContract.approve(riddleContractAddress, amountToApprove);
+			transactionHash = approveTx.hash;
+			await approveTx.wait();
+			alertStore.addAlert({ message: 'Approval successful!', type: 'success' });
+
+			// 2. Call the Riddle Contract's purchaseRetry function
+			const riddleContract = new ethers.Contract(
+				riddleContractAddress,
+				RIDDLE_CONTRACT_ABI,
+				signer
+			);
+
+			alertStore.addAlert({
+				message: `Purchasing retry for Riddle ID: ${riddleId}...`,
+				type: 'info'
+			});
+			const purchaseTx = await riddleContract.purchaseRetry(riddleId, amountToApprove);
+			transactionHash = purchaseTx.hash;
+			await purchaseTx.wait();
+			alertStore.addAlert({ message: 'Retry purchase successful!', type: 'success' });
+
+			// 3. Update backend to reflect riddle participation status
+			await apiFetch(`/api/riddle/${riddleId}/purchase-retry`, {
+				method: 'POST',
+				body: {
+					riddleId,
+					transactionHash: purchaseTx.hash,
+					walletAddress
 				}
-		
-				try {
-					const provider = new ethers.BrowserProvider(walletProvider);
-					const signer = await provider.getSigner();
-					const network = await provider.getNetwork();
-					explorerUrl = getExplorerUrl(Number(network.chainId));
-					// Fetch Y token decimals dynamically
-					yTokenDecimals = await fetchYTokenDecimals(provider, yTokenAddress);
-		
-					// 1. Approve the Riddle Contract to spend $Y tokens
-					const yTokenContract = new ethers.Contract(yTokenAddress, Y_TOKEN_ABI, signer);
-					const amountToApprove = ethers.parseUnits(retryCost.toString(), yTokenDecimals);
-		
-					alertStore.addAlert({ message: `Approving ${retryCost} $Y tokens...`, type: 'info' });
-					const approveTx = await yTokenContract.approve(riddleContractAddress, amountToApprove);
-					transactionHash = approveTx.hash;
-					await approveTx.wait();
-					alertStore.addAlert({ message: 'Approval successful!', type: 'success' });
-		
-					// 2. Call the Riddle Contract's purchaseRetry function
-					const riddleContract = new ethers.Contract(
-						riddleContractAddress,
-						RIDDLE_CONTRACT_ABI,
-						signer
-					);
-		
-					alertStore.addAlert({
-						message: `Purchasing retry for Riddle ID: ${riddleId}...`,
-						type: 'info'
-					});
-					const purchaseTx = await riddleContract.purchaseRetry(riddleId, amountToApprove);
-					transactionHash = purchaseTx.hash;
-					await purchaseTx.wait();
-					alertStore.addAlert({ message: 'Retry purchase successful!', type: 'success' });
-		
-					// 3. Update backend to reflect riddle participation status
-					await apiFetch(`/api/riddle/${riddleId}/purchase-retry`, {
-						method: 'POST',
-						body: {
-							riddleId,
-							transactionHash: purchaseTx.hash,
-							walletAddress
-						}
-					});
-		
-					success = true;
-					alertStore.addAlert({ message: 'Riddle participation status updated!', type: 'success' });
-					dispatch('purchaseSuccess'); // Notify parent component of success
-				} catch (e: unknown) {
-					if (e instanceof ApiError) {
-						error = `API Error: ${e.message} (Status: ${e.status})`;
-					} else if (e instanceof Error) {
-						error = e.message;
-					} else {
-						error = 'An unknown error occurred during purchase.';
-					}
-					alertStore.addAlert({ message: error, type: 'error' });
-					console.error('Purchase retry error:', e);
-				} finally {
-					isLoading = false;
-				}
+			});
+
+			success = true;
+			alertStore.addAlert({ message: 'Riddle participation status updated!', type: 'success' });
+			dispatch('purchaseSuccess'); // Notify parent component of success
+		} catch (e: unknown) {
+			if (e instanceof ApiError) {
+				error = `API Error: ${e.message} (Status: ${e.status})`;
+			} else if (e instanceof Error) {
+				error = e.message;
+			} else {
+				error = 'An unknown error occurred during purchase.';
 			}
-		
-			// Helper to get Etherscan-like URL based on chain ID
-			function getExplorerUrl(chainId: number): string {
-				switch (chainId) {
-					case 1: // Mainnet
-						return 'https://etherscan.io';
-					case 11155111: // Sepolia
-						return 'https://sepolia.etherscan.io';
-					case 80001: // Polygon Mumbai (example)
-						return 'https://mumbai.polygonscan.com';
-					// Add other networks as needed
-					default:
-						return 'https://etherscan.io'; // Fallback to Ethereum Mainnet Etherscan
-				}
-			}
-		
-			let explorerUrl: string = 'https://etherscan.io';</script>
+			alertStore.addAlert({ message: error, type: 'error' });
+			console.error('Purchase retry error:', e);
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	// Helper to get Etherscan-like URL based on chain ID
+	function getExplorerUrl(chainId: number): string {
+		switch (chainId) {
+			case 1: // Mainnet
+				return 'https://etherscan.io';
+			case 11155111: // Sepolia
+				return 'https://sepolia.etherscan.io';
+			case 80001: // Polygon Mumbai (example)
+				return 'https://mumbai.polygonscan.com';
+			// Add other networks as needed
+			default:
+				return 'https://etherscan.io'; // Fallback to Ethereum Mainnet Etherscan
+		}
+	}
+
+	let explorerUrl: string = 'https://etherscan.io';
+</script>
 
 <div class="p-4 bg-gray-800 rounded-lg shadow-md text-white">
 	<h3 class="text-xl font-semibold mb-4">Purchase Riddle Retry</h3>
