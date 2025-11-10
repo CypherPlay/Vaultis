@@ -9,7 +9,7 @@
 		prize: string; // Assuming prize is a string, e.g., "100 tokens"
 	}
 
-	export let dailyWinners: DailyWinner[] = [];
+	let dailyWinners: DailyWinner[] = [];
 	export let allTimeRanks: { rank: number; name: string; score: number }[] = []; // Keep this for now, will be fetched later if needed
 	let activeTab: 'daily' | 'all-time' = 'daily';
 	let isLoading = true;

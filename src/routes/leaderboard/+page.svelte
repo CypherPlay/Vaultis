@@ -45,6 +45,6 @@
 			</div>
 		</div>
 	{:else}
-		<LeaderboardTabs {dailyWinners} {allTimeRanks} />
+		<LeaderboardTabs {allTimeRanks} />
 	{/if}
 </div>
