@@ -1,0 +1,79 @@
+<script lang="ts">
+  export let dailyWinners: { rank: number; name: string; score: number }[] = [];
+  export let allTimeRanks: { rank: number; name: string; score: number }[] = [];
+
+  let activeTab: 'daily' | 'all-time' = 'daily';
+</script>
+
+<div class="flex flex-col items-center w-full">
+  <div class="flex space-x-4 mb-4">
+    <button
+      class="px-6 py-2 rounded-lg text-lg font-semibold transition-colors duration-200"
+      class:bg-primary-500={activeTab === 'daily'}
+      class:text-white={activeTab === 'daily'}
+      class:bg-gray-200={activeTab !== 'daily'}
+      class:text-gray-700={activeTab !== 'daily'}
+      on:click={() => (activeTab = 'daily')}
+    >
+      Daily Winners
+    </button>
+    <button
+      class="px-6 py-2 rounded-lg text-lg font-semibold transition-colors duration-200"
+      class:bg-primary-500={activeTab === 'all-time'}
+      class:text-white={activeTab === 'all-time'}
+      class:bg-gray-200={activeTab !== 'all-time'}
+      class:text-gray-700={activeTab !== 'all-time'}
+      on:click={() => (activeTab = 'all-time')}
+    >
+      All-Time Ranks
+    </button>
+  </div>
+
+  <div class="w-full p-4 bg-white rounded-lg shadow-md">
+    {#if activeTab === 'daily'}
+      <h2 class="text-2xl font-semibold mb-4 text-primary-content">Daily Winners</h2>
+      <div class="overflow-x-auto">
+        <table class="table w-full">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Name</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each dailyWinners as winner (winner.rank)}
+              <tr>
+                <td>{winner.rank}</td>
+                <td>{winner.name}</td>
+                <td>{winner.score}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    {:else}
+      <h2 class="text-2xl font-semibold mb-4 text-primary-content">All-Time Ranks</h2>
+      <div class="overflow-x-auto">
+        <table class="table w-full">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Name</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each allTimeRanks as ranker (ranker.rank)}
+              <tr>
+                <td>{ranker.rank}</td>
+                <td>{ranker.name}</td>
+                <td>{ranker.score}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    {/if}
+  </div>
+</div>
