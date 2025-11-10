@@ -9,17 +9,13 @@
 		score: number;
 	}
 
-	let dailyWinners: LeaderboardEntry[] = []; // Placeholder for daily winners data
+
 	let allTimeRanks: LeaderboardEntry[] = []; // Placeholder for all-time ranks data
 
 	onMount(() => {
 		// Simulate data loading
 		const timeoutId = setTimeout(() => {
-			dailyWinners = [
-				{ rank: 1, name: 'Alice', score: 1500 },
-				{ rank: 2, name: 'Bob', score: 1450 },
-				{ rank: 3, name: 'Charlie', score: 1400 }
-			];
+
 			allTimeRanks = [
 				{ rank: 1, name: 'David', score: 5000 },
 				{ rank: 2, name: 'Eve', score: 4800 },
