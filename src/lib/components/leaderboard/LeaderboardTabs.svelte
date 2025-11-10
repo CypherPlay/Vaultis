@@ -1,8 +1,35 @@
 <script lang="ts">
-  export let dailyWinners: { rank: number; name: string; score: number }[] = [];
-  export let allTimeRanks: { rank: number; name: string; score: number }[] = [];
+  import { onMount } from 'svelte';
+  import { apiFetch, ApiError } from '$lib/utils/apiClient';
+  import { shortAddress } from '$lib/utils/shortAddress';
 
+  interface DailyWinner {
+    rank: number;
+    wallet: string;
+    prize: string; // Assuming prize is a string, e.g., "100 tokens"
+  }
+
+  let dailyWinners: DailyWinner[] = [];
+  let allTimeRanks: { rank: number; name: string; score: number }[] = []; // Keep this for now, will be fetched later if needed
   let activeTab: 'daily' | 'all-time' = 'daily';
+  let isLoading = true;
+  let error: string | null = null;
+
+  onMount(async () => {
+    try {
+      dailyWinners = await apiFetch<DailyWinner[]>('/api/leaderboard/daily-winners');
+    } catch (e) {
+      if (e instanceof ApiError) {
+        error = `Error ${e.status}: ${e.message}`;
+      } else if (e instanceof Error) {
+        error = e.message;
+      } else {
+        error = 'An unknown error occurred.';
+      }
+    } finally {
+      isLoading = false;
+    }
+  });
 </script>
 
 <div class="flex flex-col items-center w-full">
@@ -41,26 +68,58 @@
     {#if activeTab === 'daily'}
       <div role="tabpanel" id="panel-daily" aria-labelledby="tab-daily">
         <h2 class="text-2xl font-semibold mb-4 text-primary-content">Daily Winners</h2>
-        <div class="overflow-x-auto">
-          <table class="table w-full">
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Name</th>
-                <th>Score</th>
-              </tr>
-            </thead>
-            <tbody>
-              {#each dailyWinners as winner (winner.rank)}
+        {#if isLoading}
+          <div class="overflow-x-auto">
+            <table class="table w-full">
+              <thead>
                 <tr>
-                  <td>{winner.rank}</td>
-                  <td>{winner.name}</td>
-                  <td>{winner.score}</td>
+                  <th>Rank</th>
+                  <th>Wallet</th>
+                  <th>Prize</th>
                 </tr>
-              {/each}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {#each Array(5) as _, i}
+                  <tr class="skeleton-row">
+                    <td><div class="h-4 bg-gray-200 rounded w-1/4"></div></td>
+                    <td><div class="h-4 bg-gray-200 rounded w-1/2"></div></td>
+                    <td><div class="h-4 bg-gray-200 rounded w-1/4"></div></td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+        {:else if error}
+          <div class="text-error-content text-center py-8">
+            <p class="text-lg">Error loading daily winners: {error}</p>
+            <p>Please try again later.</p>
+          </div>
+        {:else if dailyWinners.length === 0}
+          <div class="text-info-content text-center py-8">
+            <p class="text-lg">No daily winners yet. Check back tomorrow!</p>
+          </div>
+        {:else}
+          <div class="overflow-x-auto">
+            <table class="table w-full">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Wallet</th>
+                  <th>Prize</th>
+                </tr>
+              </thead>
+              <tbody>
+                {#each dailyWinners as winner (winner.rank)}
+                  <tr>
+                    <td>{winner.rank}</td>
+                    <td>{shortAddress(winner.wallet)}</td>
+                    <td>{winner.prize}</td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+        {/if}
       </div>
     {:else}
       <div role="tabpanel" id="panel-all-time" aria-labelledby="tab-all-time">
