@@ -54,7 +54,7 @@
 	}
 
 	async function fetchAllTimeWinners() {
-		if (allTimeWinners.length > 0 || isLoadingAllTime) return; // Don't refetch if already loaded or loading
+		if (isLoadingAllTime || (allTimeWinners.length > 0 && errorAllTime === null)) return; // Don't refetch if already loading or if data is successfully loaded
 
 		isLoadingAllTime = true;
 		errorAllTime = null;
