@@ -18,6 +18,7 @@
 
 	let dailyWinners: DailyWinner[] = [];
 	let allTimeWinners: AllTimeWinner[] = [];
+	// Invariant: allTimeWinners is assumed to be pre-sorted by totalWins descending for correct rank assignment.
 	$: rankedAllTimeWinners = allTimeWinners.map((winner, i, arr) => {
 		const previousWinner = arr[i - 1];
 		const rank =
