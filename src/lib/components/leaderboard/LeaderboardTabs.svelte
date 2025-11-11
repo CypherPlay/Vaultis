@@ -30,6 +30,7 @@
 	let errorDaily: string | null = null;
 	let isLoadingAllTime = false; // Initially false, only loads when tab is active
 	let errorAllTime: string | null = null;
+	let hasFetchedAllTime = false; // New flag to track if all-time winners have been fetched
 
 	onMount(async () => {
 		await fetchDailyWinners();
@@ -54,13 +55,14 @@
 	}
 
 	async function fetchAllTimeWinners() {
-		if (isLoadingAllTime || (allTimeWinners.length > 0 && errorAllTime === null)) return; // Don't refetch if already loading or if data is successfully loaded
+		if (isLoadingAllTime || hasFetchedAllTime) return; // Don't refetch if already loading or if data is successfully loaded
 
 		isLoadingAllTime = true;
 		errorAllTime = null;
 		try {
 			allTimeWinners = await apiFetch<AllTimeWinner[]>('/api/leaderboard/all-time-winners');
 			allTimeWinners.sort((a, b) => b.totalWins - a.totalWins); // Sort by total wins descending
+			hasFetchedAllTime = true; // Set flag to true on successful fetch
 		} catch (e) {
 			if (e instanceof ApiError) {
 				errorAllTime = `Error ${e.status}: ${e.message}`;
@@ -69,6 +71,7 @@
 			} else {
 				errorAllTime = 'An unknown error occurred.';
 			}
+			hasFetchedAllTime = false; // Reset flag on error to allow retries
 		} finally {
 			isLoadingAllTime = false;
 		}
