@@ -9,13 +9,11 @@
 		score: number;
 	}
 
-
 	let allTimeRanks: LeaderboardEntry[] = []; // Placeholder for all-time ranks data
 
 	onMount(() => {
 		// Simulate data loading
 		const timeoutId = setTimeout(() => {
-
 			allTimeRanks = [
 				{ rank: 1, name: 'David', score: 5000 },
 				{ rank: 2, name: 'Eve', score: 4800 },

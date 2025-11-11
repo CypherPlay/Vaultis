@@ -9,27 +9,73 @@
 		prize: string; // Assuming prize is a string, e.g., "100 tokens"
 	}
 
+	interface AllTimeWinner {
+		wallet: string;
+		totalWins: number;
+		cumulativePrize: string; // Assuming prize is a string
+		rank?: number; // Add rank property for tie handling
+	}
+
 	let dailyWinners: DailyWinner[] = [];
-	export let allTimeRanks: { rank: number; name: string; score: number }[] = []; // Keep this for now, will be fetched later if needed
+	let allTimeWinners: AllTimeWinner[] = [];
+	// Invariant: allTimeWinners is assumed to be pre-sorted by totalWins descending for correct rank assignment.
+	$: rankedAllTimeWinners = allTimeWinners.map((winner, i, arr) => {
+		const previousWinner = arr[i - 1];
+		const rank =
+			previousWinner && previousWinner.totalWins === winner.totalWins ? previousWinner.rank : i + 1;
+		return { ...winner, rank };
+	});
 	let activeTab: 'daily' | 'all-time' = 'daily';
-	let isLoading = true;
-	let error: string | null = null;
+	let isLoadingDaily = true;
+	let errorDaily: string | null = null;
+	let isLoadingAllTime = false; // Initially false, only loads when tab is active
+	let errorAllTime: string | null = null;
+	let hasFetchedAllTime = false; // New flag to track if all-time winners have been fetched
 
 	onMount(async () => {
+		await fetchDailyWinners();
+	});
+
+	async function fetchDailyWinners() {
+		isLoadingDaily = true;
+		errorDaily = null;
 		try {
 			dailyWinners = await apiFetch<DailyWinner[]>('/api/leaderboard/daily-winners');
 		} catch (e) {
 			if (e instanceof ApiError) {
-				error = `Error ${e.status}: ${e.message}`;
+				errorDaily = `Error ${e.status}: ${e.message}`;
 			} else if (e instanceof Error) {
-				error = e.message;
+				errorDaily = e.message;
 			} else {
-				error = 'An unknown error occurred.';
+				errorDaily = 'An unknown error occurred.';
 			}
 		} finally {
-			isLoading = false;
+			isLoadingDaily = false;
 		}
-	});
+	}
+
+	async function fetchAllTimeWinners() {
+		if (isLoadingAllTime || hasFetchedAllTime) return; // Don't refetch if already loading or if data is successfully loaded
+
+		isLoadingAllTime = true;
+		errorAllTime = null;
+		try {
+			allTimeWinners = await apiFetch<AllTimeWinner[]>('/api/leaderboard/all-time-winners');
+			allTimeWinners.sort((a, b) => b.totalWins - a.totalWins); // Sort by total wins descending
+			hasFetchedAllTime = true; // Set flag to true on successful fetch
+		} catch (e) {
+			if (e instanceof ApiError) {
+				errorAllTime = `Error ${e.status}: ${e.message}`;
+			} else if (e instanceof Error) {
+				errorAllTime = e.message;
+			} else {
+				errorAllTime = 'An unknown error occurred.';
+			}
+			hasFetchedAllTime = false; // Reset flag on error to allow retries
+		} finally {
+			isLoadingAllTime = false;
+		}
+	}
 </script>
 
 <div class="flex w-full flex-col items-center">
@@ -60,7 +106,10 @@
 			class:text-white={activeTab === 'all-time'}
 			class:bg-gray-200={activeTab !== 'all-time'}
 			class:text-gray-700={activeTab !== 'all-time'}
-			on:click={() => (activeTab = 'all-time')}
+			on:click={() => {
+				activeTab = 'all-time';
+				void fetchAllTimeWinners();
+			}}
 		>
 			All-Time Ranks
 		</button>
@@ -70,7 +119,7 @@
 		{#if activeTab === 'daily'}
 			<div role="tabpanel" id="panel-daily" aria-labelledby="tab-daily">
 				<h2 class="text-2xl font-semibold mb-4 text-primary-content">Daily Winners</h2>
-				{#if isLoading}
+				{#if isLoadingDaily}
 					<div class="overflow-x-auto">
 						<table class="table w-full">
 							<thead>
@@ -81,7 +130,8 @@
 								</tr>
 							</thead>
 							<tbody>
-								{#each Array(5) as _i, i (i)}
+								<!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
+								{#each Array(5) as _, i (i)}
 									<tr class="skeleton-row">
 										<td><div class="h-4 bg-gray-200 rounded w-1/4"></div></td>
 										<td><div class="h-4 bg-gray-200 rounded w-1/2"></div></td>
@@ -91,9 +141,9 @@
 							</tbody>
 						</table>
 					</div>
-				{:else if error}
+				{:else if errorDaily}
 					<div class="text-error-content py-8 text-center">
-						<p class="text-lg">Error loading daily winners: {error}</p>
+						<p class="text-lg">Error loading daily winners: {errorDaily}</p>
 						<p>Please try again later.</p>
 					</div>
 				{:else if dailyWinners.length === 0}
@@ -126,31 +176,63 @@
 		{:else}
 			<div role="tabpanel" id="panel-all-time" aria-labelledby="tab-all-time">
 				<h2 class="text-2xl font-semibold mb-4 text-primary-content">All-Time Ranks</h2>
-				{#if allTimeRanks.length > 0}
+				{#if isLoadingAllTime}
 					<div class="overflow-x-auto">
 						<table class="table w-full">
 							<thead>
 								<tr>
 									<th>Rank</th>
-									<th>Name</th>
-									<th>Score</th>
+									<th>Wallet</th>
+									<th>Total Wins</th>
+									<th>Cumulative Prize</th>
 								</tr>
 							</thead>
 							<tbody>
-								{#each allTimeRanks as ranker (ranker.rank)}
-									<tr>
-										<td>{ranker.rank}</td>
-										<td>{ranker.name}</td>
-										<td>{ranker.score}</td>
+								<!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
+								{#each Array(5) as _, i (i)}
+									<tr class="skeleton-row">
+										<td><div class="h-4 bg-gray-200 rounded w-1/4"></div></td>
+										<td><div class="h-4 bg-gray-200 rounded w-1/2"></div></td>
+										<td><div class="h-4 bg-gray-200 rounded w-1/4"></div></td>
+										<td><div class="h-4 bg-gray-200 rounded w-1/4"></div></td>
 									</tr>
 								{/each}
 							</tbody>
 						</table>
 					</div>
-				{:else}
+				{:else if errorAllTime}
+					<div class="text-error-content py-8 text-center">
+						<p class="text-lg">Error loading all-time ranks: {errorAllTime}</p>
+						<p>Please try again later.</p>
+					</div>
+				{:else if allTimeWinners.length === 0}
 					<div class="text-info-content py-8 text-center" aria-live="polite">
-						<p class="text-lg font-semibold">All-Time Ranks: Coming Soon!</p>
-						<p>Check back later for global rankings.</p>
+						<p class="text-lg font-semibold">
+							No all-time ranks yet. Play more to get on the leaderboard!
+						</p>
+					</div>
+				{:else}
+					<div class="overflow-x-auto">
+						<table class="table w-full">
+							<thead>
+								<tr>
+									<th>Rank</th>
+									<th>Wallet</th>
+									<th>Total Wins</th>
+									<th>Cumulative Prize</th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each rankedAllTimeWinners as winner (winner.wallet)}
+									<tr>
+										<td>{winner.rank}</td>
+										<td>{shortAddress(winner.wallet)}</td>
+										<td>{winner.totalWins}</td>
+										<td>{winner.cumulativePrize}</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
 					</div>
 				{/if}
 			</div>
