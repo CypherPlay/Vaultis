@@ -13,10 +13,17 @@
 		wallet: string;
 		totalWins: number;
 		cumulativePrize: string; // Assuming prize is a string
+		rank?: number; // Add rank property for tie handling
 	}
 
 	let dailyWinners: DailyWinner[] = [];
 	let allTimeWinners: AllTimeWinner[] = [];
+	$: rankedAllTimeWinners = allTimeWinners.map((winner, i, arr) => {
+		const previousWinner = arr[i - 1];
+		const rank =
+			previousWinner && previousWinner.totalWins === winner.totalWins ? previousWinner.rank : i + 1;
+		return { ...winner, rank };
+	});
 	let activeTab: 'daily' | 'all-time' = 'daily';
 	let isLoadingDaily = true;
 	let errorDaily: string | null = null;
@@ -119,6 +126,7 @@
 								</tr>
 							</thead>
 							<tbody>
+								<!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
 								{#each Array(5) as _, i (i)}
 									<tr class="skeleton-row">
 										<td><div class="h-4 bg-gray-200 rounded w-1/4"></div></td>
@@ -176,6 +184,7 @@
 								</tr>
 							</thead>
 							<tbody>
+								<!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
 								{#each Array(5) as _, i (i)}
 									<tr class="skeleton-row">
 										<td><div class="h-4 bg-gray-200 rounded w-1/4"></div></td>
@@ -210,9 +219,9 @@
 								</tr>
 							</thead>
 							<tbody>
-								{#each allTimeWinners as winner, i (winner.wallet)}
+								{#each rankedAllTimeWinners as winner (winner.wallet)}
 									<tr>
-										<td>{i + 1}</td>
+										<td>{winner.rank}</td>
 										<td>{shortAddress(winner.wallet)}</td>
 										<td>{winner.totalWins}</td>
 										<td>{winner.cumulativePrize}</td>
