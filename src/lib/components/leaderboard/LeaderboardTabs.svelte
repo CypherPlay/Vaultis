@@ -144,7 +144,8 @@
 				{:else if errorDaily}
 					<div class="text-error-content py-8 text-center">
 						<p class="text-lg">Error loading daily winners: {errorDaily}</p>
-						<p>Please try again later.</p>
+						<p class="mb-4">Please try again later.</p>
+						<button on:click={fetchDailyWinners} class="btn btn-primary">Retry</button>
 					</div>
 				{:else if dailyWinners.length === 0}
 					<div class="text-info-content py-8 text-center">
