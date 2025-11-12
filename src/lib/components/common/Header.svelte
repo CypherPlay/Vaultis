@@ -7,7 +7,7 @@
 
 	let isConnected: boolean;
 	let walletAddress: string | null;
-	let nextRiddleUnlockTime: Date;
+	let nextRiddleUnlockTime: Date = calculateNextRiddleUnlockTime();
 
 	function calculateNextRiddleUnlockTime(): Date {
 		const now = new Date();
@@ -16,8 +16,6 @@
 		);
 		return nextUnlock;
 	}
-
-	nextRiddleUnlockTime = calculateNextRiddleUnlockTime();
 
 	walletStore.subscribe((state) => {
 		isConnected = state.isConnected;
@@ -46,7 +44,7 @@
 		>
 			<h1 class="text-2xl font-bold">{title}</h1>
 			<div class="md:ml-4 mt-2 md:mt-0">
-				<CountdownTimer endTimestamp={nextRiddleUnlockTime.getTime()} />
+				<CountdownTimer endTimestamp={nextRiddleUnlockTime.getTime()} on:riddleExpired={() => (nextRiddleUnlockTime = calculateNextRiddleUnlockTime())} />
 			</div>
 		</div>
 
