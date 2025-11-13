@@ -163,7 +163,9 @@
 	let explorerUrl: string = 'https://etherscan.io';
 </script>
 
-<div class="p-4 bg-gray-800 rounded-lg shadow-md text-white">
+<div class="p-4 bg-gray-800 rounded-lg shadow-md text-white"
+	in:fade={{ duration: 300 }}
+	out:fade={{ duration: 300 }}>
 	<h3 class="text-xl font-semibold mb-4">Purchase Riddle Retry</h3>
 
 	{#if !$walletStore.isConnected}

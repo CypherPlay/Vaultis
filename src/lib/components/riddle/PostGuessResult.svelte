@@ -17,6 +17,7 @@
 
 <div
 	in:fade={{ duration: 500 }}
+	out:fade={{ duration: 500 }}
 	class="p-6 rounded-lg shadow-lg max-w-md mt-8 mx-auto flex flex-col items-center justify-center"
 	class:bg-green-100={isCorrect}
 	class:text-green-800={isCorrect}
