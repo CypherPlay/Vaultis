@@ -4,6 +4,8 @@
 	import { apiFetch, ApiError } from '$lib/utils/apiClient';
 	import { ethers } from 'ethers';
 	import { createEventDispatcher } from 'svelte';
+	import { fade } from 'svelte/transition';
+
 	import { alertStore } from '$lib/stores/alertStore';
 
 	export let riddleId: string;
