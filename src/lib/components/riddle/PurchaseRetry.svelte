@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { walletStore } from '$lib/stores/walletStore';
+	import WalletConnect from '$lib/components/wallet/WalletConnect.svelte';
 	import { apiFetch, ApiError } from '$lib/utils/apiClient';
 	import { ethers } from 'ethers';
 	import { createEventDispatcher } from 'svelte';
@@ -167,6 +168,9 @@
 
 	{#if !$walletStore.isConnected}
 		<p class="text-red-400 mb-4">Please connect your wallet to purchase a retry.</p>
+		<div class="mt-4">
+			<WalletConnect />
+		</div>
 	{:else if success}
 		<p class="text-green-400 mb-4">
 			Successfully purchased a retry! You can now attempt the riddle again.
