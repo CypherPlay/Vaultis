@@ -4,6 +4,8 @@
 	import { apiFetch, ApiError } from '$lib/utils/apiClient';
 	import { ethers } from 'ethers';
 	import { createEventDispatcher } from 'svelte';
+	import { fade } from 'svelte/transition';
+
 	import { alertStore } from '$lib/stores/alertStore';
 
 	export let riddleId: string;
@@ -163,7 +165,9 @@
 	let explorerUrl: string = 'https://etherscan.io';
 </script>
 
-<div class="p-4 bg-gray-800 rounded-lg shadow-md text-white">
+<div class="p-4 bg-gray-800 rounded-lg shadow-md text-white"
+	in:fade={{ duration: 300 }}
+	out:fade={{ duration: 300 }}>
 	<h3 class="text-xl font-semibold mb-4">Purchase Riddle Retry</h3>
 
 	{#if !$walletStore.isConnected}
