@@ -36,13 +36,14 @@
 			return;
 		}
 
-		if (guess.trim() === '') {
+		const trimmedGuess = guess.trim();
+		if (trimmedGuess === '') {
 			errorMessage = 'Your guess cannot be empty.';
 
 			return;
 		}
 
-		if (guess.length > MAX_GUESS_LENGTH) {
+		if (trimmedGuess.length > MAX_GUESS_LENGTH) {
 			errorMessage = `Your guess exceeds the maximum length of ${MAX_GUESS_LENGTH} characters.`;
 
 			return;
@@ -54,7 +55,7 @@
 			const response = await apiFetch('/api/guesses/submit', {
 				method: 'POST',
 
-				body: JSON.stringify({ walletAddress, guess: guess.trim() }),
+				body: JSON.stringify({ walletAddress, guess: trimmedGuess }),
 
 				headers: {
 					'Content-Type': 'application/json'
