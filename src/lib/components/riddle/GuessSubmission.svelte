@@ -9,6 +9,9 @@
 
 	let guess = '';
 	let loading = false;
+	let errorMessage = '';
+
+	const MAX_GUESS_LENGTH = 100; // Define a maximum character limit for the guess
 	let showResult = false;
 	let guessResult: { isCorrect: boolean; recordedTime: string | null; canRetry: boolean } | null =
 		null;
@@ -21,6 +24,8 @@
 	}
 
 	async function handleSubmit() {
+		errorMessage = ''; // Clear previous errors
+
 		const walletState = get(walletStore);
 
 		const walletAddress = walletState.walletAddress;
@@ -32,7 +37,13 @@
 		}
 
 		if (guess.trim() === '') {
-			alertStore.info('Please enter your guess before submitting.', 5000);
+			errorMessage = 'Your guess cannot be empty.';
+
+			return;
+		}
+
+		if (guess.length > MAX_GUESS_LENGTH) {
+			errorMessage = `Your guess exceeds the maximum length of ${MAX_GUESS_LENGTH} characters.`;
 
 			return;
 		}
@@ -91,6 +102,10 @@
 					class="mt-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring-indigo-200/50 block w-full focus:ring-3"
 					placeholder="Enter your guess here"
 				/>
+
+				{#if errorMessage}
+					<p class="text-red-500 text-sm mt-1">{errorMessage}</p>
+				{/if}
 			</div>
 
 			<div class="text-sm text-gray-500 mb-4">
