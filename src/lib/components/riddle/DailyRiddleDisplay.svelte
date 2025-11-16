@@ -22,7 +22,9 @@
 			// Assuming an API endpoint for fetching the daily riddle
 			const response = await apiFetch<DailyRiddle>('/api/riddle/daily');
 			riddle = response;
-			riddleEndTime = new Date(riddle.endTimestamp).getTime();
+				if (riddle) {
+				riddleEndTime = new Date(riddle.endTimestamp).getTime();
+			}
 		} catch (e) {
 			if (e instanceof ApiError) {
 				error = `Failed to fetch riddle: ${e.message}`;
@@ -49,6 +51,7 @@
 				<div class="h-48 bg-gray-700 rounded-md"></div>
 				<div class="h-6 bg-gray-700 rounded-md mx-auto w-3/4"></div>
 				<div class="h-6 bg-gray-700 rounded-md mx-auto w-1/2"></div>
+				<p class="text-lg text-gray-400 text-center">Loading daily riddle...</p>
 			</div>
 		{:else if error}
 			<div class="bg-red-900 border-red-700 text-red-300 p-4 rounded-md border text-center">
@@ -70,7 +73,7 @@
 				</p>
 			</div>
 		{:else}
-			<p class="text-gray-400 text-center">No active riddle today.</p>
+			<p class="text-gray-400 text-center">No daily riddle available today.</p>
 		{/if}
 	</div>
 </div>
