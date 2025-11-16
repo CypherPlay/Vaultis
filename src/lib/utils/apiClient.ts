@@ -129,7 +129,7 @@ export async function submitGuess(data: {
 	walletAddress: string;
 	guess: string;
 }): Promise<{ isCorrect: boolean; recordedTime: string | null; canRetry: boolean }> {
-	return apiFetch('/api/guesses/submit', {
+	return apiFetch<{ isCorrect: boolean; recordedTime: string | null; canRetry: boolean }>('/api/guesses/submit', {
 		method: 'POST',
 		body: data
 	});
@@ -138,5 +138,5 @@ export async function submitGuess(data: {
 export async function fetchLeaderboard<T extends 'daily-winners' | 'all-time-winners'>(type: T): Promise<
 	T extends 'daily-winners' ? DailyWinner[] : T extends 'all-time-winners' ? AllTimeWinner[] : never
 > {
-	return apiFetch(`/api/leaderboard/${type}`);
+	return apiFetch<T extends 'daily-winners' ? DailyWinner[] : AllTimeWinner[]>(`/api/leaderboard/${type}`);
 }
