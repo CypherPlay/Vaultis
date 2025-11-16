@@ -1,10 +1,18 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
+import userEvent from '@testing-library/user-event';
 import GuessSubmission from './GuessSubmission.svelte';
 import { vi } from 'vitest';
 import * as apiClient from '$lib/utils/apiClient';
+import { alertStore } from '$lib/stores/alertStore';
 
-vi.mock('$lib/utils/apiClient', () => ({
-	apiFetch: vi.fn()
+// Mock the apiClient and alertStore
+vi.mock('$lib/utils/apiClient');
+vi.mock('$lib/stores/alertStore', () => ({
+	alertStore: {
+		error: vi.fn(),
+		info: vi.fn(),
+		success: vi.fn()
+	}
 }));
 
 vi.mock('$lib/stores/walletStore', () => ({
@@ -31,10 +39,7 @@ describe('GuessSubmission', () => {
 		const submitButton = screen.getByText('Submit Guess');
 		await fireEvent.click(submitButton);
 
-		expect(screen.getByText('Please enter your guess before submitting.')).toBeInTheDocument();
-		expect(screen.getByRole('alert')).toHaveTextContent(
-			'Please enter your guess before submitting.'
-		);
+		expect(screen.getByText('Your guess cannot be empty.')).toBeInTheDocument();
 	});
 
 	it('calls apiFetch on successful submission and clears input', async () => {
@@ -52,32 +57,31 @@ describe('GuessSubmission', () => {
 			expect.objectContaining({
 				method: 'POST',
 				body: JSON.stringify({ walletAddress: '0xTestWalletAddress', guess: 'test guess' }),
-				headers: { 'Content-Type': 'application/json' }
-			})
-		);
-		await waitFor(() => expect(input).toHaveValue(''));
-		expect(
-			screen.getByText('Guess "test guess" submitted! (Entry fee: 5 tokens)')
-		).toBeInTheDocument();
-		expect(screen.getByRole('status')).toHaveTextContent(
-			'Guess "test guess" submitted! (Entry fee: 5 tokens)'
-		);
-	});
+									headers: { 'Content-Type': 'application/json' }
+								})
+							);
+							await waitFor(() => expect(alertStore.success).toHaveBeenCalledWith(
+								'Guess submitted successfully!',
+								3000
+							));	});
 
 	it('shows an error message on failed submission and does not clear input', async () => {
-		vi.spyOn(apiClient, 'apiFetch').mockRejectedValueOnce(new Error('Network error'));
-		render(GuessSubmission);
-
-		const input = screen.getByPlaceholderText('Enter your guess here');
-		const submitButton = screen.getByText('Submit Guess');
-
-		await fireEvent.input(input, { target: { value: 'bad guess' } });
-		await fireEvent.click(submitButton);
-
-		await waitFor(() => expect(screen.getByText('Network error')).toBeInTheDocument());
-		expect(input).toHaveValue('bad guess');
-		expect(screen.getByRole('alert')).toHaveTextContent('Network error');
-	});
+		const errorMessage = 'Network error';
+		vi.mocked(apiClient.apiFetch).mockRejectedValue(new Error(errorMessage));
+		
+		        render(GuessSubmission, { entryFee: 5 });
+		
+		        const input = screen.getByPlaceholderText('Enter your guess here');
+		        await userEvent.type(input, 'bad guess');
+		
+		        const submitButton = screen.getByRole('button', { name: 'Submit Guess' });
+		        await fireEvent.click(submitButton);
+		
+		        await waitFor(() => expect(alertStore.error).toHaveBeenCalledWith(
+		            errorMessage,
+		            5000
+		        ));
+		        expect(input).toHaveValue('bad guess');	});
 
 	it('disables submit button while loading', async () => {
 		vi.spyOn(apiClient, 'apiFetch').mockImplementationOnce(

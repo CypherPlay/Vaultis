@@ -46,7 +46,7 @@ describe('DailyRiddleDisplay', () => {
 
 		render(DailyRiddleDisplay);
 
-		const img = await screen.findByRole('img');
+		const img = await screen.findByAltText('');
 		expect(img).toBeInTheDocument();
 		expect(img).toHaveAttribute('src', '/images/riddle-echo.png');
 		expect(img).toHaveAttribute('alt', '');

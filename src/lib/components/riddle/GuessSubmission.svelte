@@ -63,7 +63,7 @@
 			});
 
 			guessResult = response;
-
+			guess = ''; // Clear the input after successful submission
 			showResult = true;
 
 			alertStore.success('Guess submitted successfully!', 3000);
