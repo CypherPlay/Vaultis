@@ -17,6 +17,9 @@ export default defineConfig({
 		alias: {
 			$lib: './src/lib'
 		},
-		environmentMatchGlobs: [['src/**/*.svelte', 'jsdom']]
+		environmentMatchGlobs: [['src/**/*.svelte', 'jsdom']],
+		resolve: {
+			conditions: ['browser']
+		}
 	}
 });
