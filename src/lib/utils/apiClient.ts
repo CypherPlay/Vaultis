@@ -23,6 +23,19 @@ if (VITE_API_BASE_URL) {
 
 export type ApiResponse<T = unknown> = T;
 
+export interface DailyWinner {
+	rank: number;
+	wallet: string;
+	prize: string;
+}
+
+export interface AllTimeWinner {
+	wallet: string;
+	totalWins: number;
+	cumulativePrize: string;
+	rank?: number;
+}
+
 export class ApiError extends Error {
 	status: number;
 	data?: unknown;
@@ -37,15 +50,14 @@ export class ApiError extends Error {
 
 /**
  * Authenticated API client for making fetch requests.
- * It automatically attaches the access token, handles token refresh on 401 errors,
+ * It automatically attaches the access token
  * and normalizes network and API errors.
  *
  * Depends on `user` store for the session token.
  */
 export async function apiFetch<T = unknown>(
 	input: RequestInfo,
-	init?: RequestInit,
-	_retried = false
+	init?: RequestInit
 ): Promise<ApiResponse<T>> {
 	const { sessionToken } = get(user);
 	const headers = new Headers(init?.headers);
@@ -80,10 +92,8 @@ export async function apiFetch<T = unknown>(
 		);
 	}
 
-	if (response.status === 401 && !_retried) {
-		// In a real application, you would attempt to refresh the token here.
-		// For this example, we'll just throw an error.
-		throw new Error('Authentication failed: session expired or invalid.');
+	if (response.status === 401) {
+		throw new ApiError(401, 'Authentication failed: session expired or invalid.');
 	}
 
 	const contentType = response.headers.get('content-type')?.toLowerCase() || '';
@@ -125,6 +135,8 @@ export async function submitGuess(data: {
 	});
 }
 
-export async function fetchLeaderboard<T>(type: 'daily-winners' | 'all-time-winners'): Promise<T> {
-	return apiFetch<T>(`/api/leaderboard/${type}`);
+export async function fetchLeaderboard<T extends 'daily-winners' | 'all-time-winners'>(type: T): Promise<
+	T extends 'daily-winners' ? DailyWinner[] : T extends 'all-time-winners' ? AllTimeWinner[] : never
+> {
+	return apiFetch(`/api/leaderboard/${type}`);
 }
