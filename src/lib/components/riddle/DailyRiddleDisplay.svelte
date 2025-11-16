@@ -22,7 +22,7 @@
 			// Assuming an API endpoint for fetching the daily riddle
 			const response = await apiFetch<DailyRiddle>('/api/riddle/daily');
 			riddle = response;
-				if (riddle) {
+			if (riddle) {
 				riddleEndTime = new Date(riddle.endTimestamp).getTime();
 			}
 		} catch (e) {

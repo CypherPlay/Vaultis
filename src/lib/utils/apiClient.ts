@@ -1,3 +1,6 @@
+import { get } from 'svelte/store';
+import { user } from '$lib/stores/userStore';
+
 const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 let BASE_URL: string = '';
@@ -16,13 +19,6 @@ if (VITE_API_BASE_URL) {
 } else {
 	// Explicitly document that relative URLs will be used
 	console.warn('VITE_API_BASE_URL not set - using relative URLs (API must be same-origin)');
-}
-
-// TODO: Implement refreshAccessToken logic if needed
-async function refreshAccessToken(): Promise<string | null> {
-	// For now, just return the current token. Real implementation would involve
-	// calling an auth endpoint to get a new token and updating the user store.
-	return currentAccessToken;
 }
 
 export type ApiResponse<T = unknown> = T;
@@ -44,21 +40,18 @@ export class ApiError extends Error {
  * It automatically attaches the access token, handles token refresh on 401 errors,
  * and normalizes network and API errors.
  *
- * Depends on `currentAccessToken` and `refreshAccessToken()`.
- * `currentAccessToken` should synchronously hold the current access token (or null/undefined).
- * `refreshAccessToken()` should be an async function that attempts to refresh the token
- * and returns the new token (or throws on failure).
+ * Depends on `user` store for the session token.
  */
 export async function apiFetch<T = unknown>(
 	input: RequestInfo,
 	init?: RequestInit,
 	_retried = false
 ): Promise<ApiResponse<T>> {
-	const token = currentAccessToken;
+	const { sessionToken } = get(user);
 	const headers = new Headers(init?.headers);
 
-	if (token) {
-		headers.set('Authorization', `Bearer ${token}`);
+	if (sessionToken) {
+		headers.set('Authorization', `Bearer ${sessionToken}`);
 	}
 
 	// Set Content-Type for JSON bodies if not already set
@@ -88,13 +81,9 @@ export async function apiFetch<T = unknown>(
 	}
 
 	if (response.status === 401 && !_retried) {
-		try {
-			await refreshAccessToken();
-			// Retry the original request with the new token
-			return apiFetch<T>(input, init, true);
-		} catch {
-			throw new Error('Authentication failed: token expired or refresh failed');
-		}
+		// In a real application, you would attempt to refresh the token here.
+		// For this example, we'll just throw an error.
+		throw new Error('Authentication failed: session expired or invalid.');
 	}
 
 	const contentType = response.headers.get('content-type')?.toLowerCase() || '';
@@ -124,4 +113,18 @@ export async function apiFetch<T = unknown>(
 	const text = await response.text();
 
 	return text as unknown as ApiResponse<T>;
+}
+
+export async function submitGuess(data: {
+	walletAddress: string;
+	guess: string;
+}): Promise<{ isCorrect: boolean; recordedTime: string | null; canRetry: boolean }> {
+	return apiFetch('/api/guesses/submit', {
+		method: 'POST',
+		body: data
+	});
+}
+
+export async function fetchLeaderboard<T>(type: 'daily-winners' | 'all-time-winners'): Promise<T> {
+	return apiFetch<T>(`/api/leaderboard/${type}`);
 }

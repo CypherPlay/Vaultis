@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { apiFetch, ApiError } from '$lib/utils/apiClient';
+	import { fetchLeaderboard, ApiError } from '$lib/utils/apiClient';
 	import { shortAddress } from '$lib/utils/shortAddress';
 
 	interface DailyWinner {
@@ -40,7 +40,7 @@
 		isLoadingDaily = true;
 		errorDaily = null;
 		try {
-			dailyWinners = await apiFetch<DailyWinner[]>('/api/leaderboard/daily-winners');
+			dailyWinners = await fetchLeaderboard<DailyWinner[]>('daily-winners');
 		} catch (e) {
 			if (e instanceof ApiError) {
 				errorDaily = `Error ${e.status}: ${e.message}`;
@@ -60,7 +60,7 @@
 		isLoadingAllTime = true;
 		errorAllTime = null;
 		try {
-			allTimeWinners = await apiFetch<AllTimeWinner[]>('/api/leaderboard/all-time-winners');
+			allTimeWinners = await fetchLeaderboard<AllTimeWinner[]>('all-time-winners');
 			allTimeWinners.sort((a, b) => b.totalWins - a.totalWins); // Sort by total wins descending
 			hasFetchedAllTime = true; // Set flag to true on successful fetch
 		} catch (e) {

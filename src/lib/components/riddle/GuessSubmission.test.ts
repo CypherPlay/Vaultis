@@ -57,31 +57,29 @@ describe('GuessSubmission', () => {
 			expect.objectContaining({
 				method: 'POST',
 				body: JSON.stringify({ walletAddress: '0xTestWalletAddress', guess: 'test guess' }),
-									headers: { 'Content-Type': 'application/json' }
-								})
-							);
-							await waitFor(() => expect(alertStore.success).toHaveBeenCalledWith(
-								'Guess submitted successfully!',
-								3000
-							));	});
+				headers: { 'Content-Type': 'application/json' }
+			})
+		);
+		await waitFor(() =>
+			expect(alertStore.success).toHaveBeenCalledWith('Guess submitted successfully!', 3000)
+		);
+	});
 
 	it('shows an error message on failed submission and does not clear input', async () => {
 		const errorMessage = 'Network error';
 		vi.mocked(apiClient.apiFetch).mockRejectedValue(new Error(errorMessage));
-		
-		        render(GuessSubmission, { entryFee: 5 });
-		
-		        const input = screen.getByPlaceholderText('Enter your guess here');
-		        await userEvent.type(input, 'bad guess');
-		
-		        const submitButton = screen.getByRole('button', { name: 'Submit Guess' });
-		        await fireEvent.click(submitButton);
-		
-		        await waitFor(() => expect(alertStore.error).toHaveBeenCalledWith(
-		            errorMessage,
-		            5000
-		        ));
-		        expect(input).toHaveValue('bad guess');	});
+
+		render(GuessSubmission, { entryFee: 5 });
+
+		const input = screen.getByPlaceholderText('Enter your guess here');
+		await userEvent.type(input, 'bad guess');
+
+		const submitButton = screen.getByRole('button', { name: 'Submit Guess' });
+		await fireEvent.click(submitButton);
+
+		await waitFor(() => expect(alertStore.error).toHaveBeenCalledWith(errorMessage, 5000));
+		expect(input).toHaveValue('bad guess');
+	});
 
 	it('disables submit button while loading', async () => {
 		vi.spyOn(apiClient, 'apiFetch').mockImplementationOnce(
