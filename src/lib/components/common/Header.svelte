@@ -44,7 +44,10 @@
 		>
 			<h1 class="text-2xl font-bold">{title}</h1>
 			<div class="md:ml-4 mt-2 md:mt-0">
-				<CountdownTimer endTimestamp={nextRiddleUnlockTime.getTime()} on:riddleExpired={() => (nextRiddleUnlockTime = calculateNextRiddleUnlockTime())} />
+				<CountdownTimer
+					endTimestamp={nextRiddleUnlockTime.getTime()}
+					on:riddleExpired={() => (nextRiddleUnlockTime = calculateNextRiddleUnlockTime())}
+				/>
 			</div>
 		</div>
 

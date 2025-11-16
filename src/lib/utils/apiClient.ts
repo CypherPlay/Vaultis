@@ -1,3 +1,6 @@
+import { get } from 'svelte/store';
+import { user } from '$lib/stores/userStore';
+
 const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 let BASE_URL: string = '';
@@ -18,14 +21,20 @@ if (VITE_API_BASE_URL) {
 	console.warn('VITE_API_BASE_URL not set - using relative URLs (API must be same-origin)');
 }
 
-// TODO: Implement refreshAccessToken logic if needed
-async function refreshAccessToken(): Promise<string | null> {
-	// For now, just return the current token. Real implementation would involve
-	// calling an auth endpoint to get a new token and updating the user store.
-	return currentAccessToken;
+export type ApiResponse<T = unknown> = T;
+
+export interface DailyWinner {
+	rank: number;
+	wallet: string;
+	prize: string;
 }
 
-export type ApiResponse<T = unknown> = T;
+export interface AllTimeWinner {
+	wallet: string;
+	totalWins: number;
+	cumulativePrize: string;
+	rank?: number;
+}
 
 export class ApiError extends Error {
 	status: number;
@@ -41,24 +50,20 @@ export class ApiError extends Error {
 
 /**
  * Authenticated API client for making fetch requests.
- * It automatically attaches the access token, handles token refresh on 401 errors,
+ * It automatically attaches the access token
  * and normalizes network and API errors.
  *
- * Depends on `currentAccessToken` and `refreshAccessToken()`.
- * `currentAccessToken` should synchronously hold the current access token (or null/undefined).
- * `refreshAccessToken()` should be an async function that attempts to refresh the token
- * and returns the new token (or throws on failure).
+ * Depends on `user` store for the session token.
  */
 export async function apiFetch<T = unknown>(
 	input: RequestInfo,
-	init?: RequestInit,
-	_retried = false
+	init?: RequestInit
 ): Promise<ApiResponse<T>> {
-	const token = currentAccessToken;
+	const { sessionToken } = get(user);
 	const headers = new Headers(init?.headers);
 
-	if (token) {
-		headers.set('Authorization', `Bearer ${token}`);
+	if (sessionToken) {
+		headers.set('Authorization', `Bearer ${sessionToken}`);
 	}
 
 	// Set Content-Type for JSON bodies if not already set
@@ -87,14 +92,8 @@ export async function apiFetch<T = unknown>(
 		);
 	}
 
-	if (response.status === 401 && !_retried) {
-		try {
-			await refreshAccessToken();
-			// Retry the original request with the new token
-			return apiFetch<T>(input, init, true);
-		} catch {
-			throw new Error('Authentication failed: token expired or refresh failed');
-		}
+	if (response.status === 401) {
+		throw new ApiError(401, 'Authentication failed: session expired or invalid.');
 	}
 
 	const contentType = response.headers.get('content-type')?.toLowerCase() || '';
@@ -124,4 +123,20 @@ export async function apiFetch<T = unknown>(
 	const text = await response.text();
 
 	return text as unknown as ApiResponse<T>;
+}
+
+export async function submitGuess(data: {
+	walletAddress: string;
+	guess: string;
+}): Promise<{ isCorrect: boolean; recordedTime: string | null; canRetry: boolean }> {
+	return apiFetch<{ isCorrect: boolean; recordedTime: string | null; canRetry: boolean }>('/api/guesses/submit', {
+		method: 'POST',
+		body: data
+	});
+}
+
+export async function fetchLeaderboard<T extends 'daily-winners' | 'all-time-winners'>(type: T): Promise<
+	T extends 'daily-winners' ? DailyWinner[] : T extends 'all-time-winners' ? AllTimeWinner[] : never
+> {
+	return apiFetch<T extends 'daily-winners' ? DailyWinner[] : AllTimeWinner[]>(`/api/leaderboard/${type}`);
 }

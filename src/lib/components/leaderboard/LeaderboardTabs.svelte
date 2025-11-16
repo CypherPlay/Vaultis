@@ -1,30 +1,20 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { apiFetch, ApiError } from '$lib/utils/apiClient';
+	import { fetchLeaderboard, ApiError, DailyWinner, AllTimeWinner } from '$lib/utils/apiClient';
 	import { shortAddress } from '$lib/utils/shortAddress';
-
-	interface DailyWinner {
-		rank: number;
-		wallet: string;
-		prize: string; // Assuming prize is a string, e.g., "100 tokens"
-	}
-
-	interface AllTimeWinner {
-		wallet: string;
-		totalWins: number;
-		cumulativePrize: string; // Assuming prize is a string
-		rank?: number; // Add rank property for tie handling
-	}
 
 	let dailyWinners: DailyWinner[] = [];
 	let allTimeWinners: AllTimeWinner[] = [];
 	// Invariant: allTimeWinners is assumed to be pre-sorted by totalWins descending for correct rank assignment.
-	$: rankedAllTimeWinners = allTimeWinners.map((winner, i, arr) => {
-		const previousWinner = arr[i - 1];
+	$: rankedAllTimeWinners = allTimeWinners.reduce((acc: AllTimeWinner[], winner, i) => {
+		const previousWinner = acc[i - 1];
 		const rank =
-			previousWinner && previousWinner.totalWins === winner.totalWins ? previousWinner.rank : i + 1;
-		return { ...winner, rank };
-	});
+			previousWinner && previousWinner.totalWins === winner.totalWins
+				? previousWinner.rank
+				: i + 1;
+		acc.push({ ...winner, rank });
+		return acc;
+	}, []);
 	let activeTab: 'daily' | 'all-time' = 'daily';
 	let isLoadingDaily = true;
 	let errorDaily: string | null = null;
@@ -40,7 +30,7 @@
 		isLoadingDaily = true;
 		errorDaily = null;
 		try {
-			dailyWinners = await apiFetch<DailyWinner[]>('/api/leaderboard/daily-winners');
+			dailyWinners = await fetchLeaderboard<DailyWinner[]>('daily-winners');
 		} catch (e) {
 			if (e instanceof ApiError) {
 				errorDaily = `Error ${e.status}: ${e.message}`;
@@ -60,7 +50,7 @@
 		isLoadingAllTime = true;
 		errorAllTime = null;
 		try {
-			allTimeWinners = await apiFetch<AllTimeWinner[]>('/api/leaderboard/all-time-winners');
+			allTimeWinners = await fetchLeaderboard<AllTimeWinner[]>('all-time-winners');
 			allTimeWinners.sort((a, b) => b.totalWins - a.totalWins); // Sort by total wins descending
 			hasFetchedAllTime = true; // Set flag to true on successful fetch
 		} catch (e) {

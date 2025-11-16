@@ -42,8 +42,8 @@ describe('GuessSubmission', () => {
 		expect(screen.getByText('Your guess cannot be empty.')).toBeInTheDocument();
 	});
 
-	it('calls apiFetch on successful submission and clears input', async () => {
-		const apiFetchSpy = vi.spyOn(apiClient, 'apiFetch').mockResolvedValueOnce({});
+	it('calls submitGuess on successful submission and clears input', async () => {
+		const submitGuessSpy = vi.spyOn(apiClient, 'submitGuess').mockResolvedValueOnce({ isCorrect: false, recordedTime: null, canRetry: true });
 		render(GuessSubmission);
 
 		const input = screen.getByPlaceholderText('Enter your guess here');
@@ -52,39 +52,33 @@ describe('GuessSubmission', () => {
 		await fireEvent.input(input, { target: { value: 'test guess' } });
 		await fireEvent.click(submitButton);
 
-		expect(apiFetchSpy).toHaveBeenCalledWith(
-			'/api/guesses/submit',
-			expect.objectContaining({
-				method: 'POST',
-				body: JSON.stringify({ walletAddress: '0xTestWalletAddress', guess: 'test guess' }),
-									headers: { 'Content-Type': 'application/json' }
-								})
-							);
-							await waitFor(() => expect(alertStore.success).toHaveBeenCalledWith(
-								'Guess submitted successfully!',
-								3000
-							));	});
+		expect(submitGuessSpy).toHaveBeenCalledWith({
+			walletAddress: '0xTestWalletAddress',
+			guess: 'test guess'
+		});
+		await waitFor(() =>
+			expect(alertStore.success).toHaveBeenCalledWith('Guess submitted successfully!', 3000)
+		);
+	});
 
 	it('shows an error message on failed submission and does not clear input', async () => {
-		const errorMessage = 'Network error';
-		vi.mocked(apiClient.apiFetch).mockRejectedValue(new Error(errorMessage));
-		
-		        render(GuessSubmission, { entryFee: 5 });
-		
-		        const input = screen.getByPlaceholderText('Enter your guess here');
-		        await userEvent.type(input, 'bad guess');
-		
-		        const submitButton = screen.getByRole('button', { name: 'Submit Guess' });
-		        await fireEvent.click(submitButton);
-		
-		        await waitFor(() => expect(alertStore.error).toHaveBeenCalledWith(
-		            errorMessage,
-		            5000
-		        ));
-		        expect(input).toHaveValue('bad guess');	});
+		const errorMessage = 'Submission failed. Please try again.';
+		vi.mocked(apiClient.submitGuess).mockRejectedValue(new apiClient.ApiError(500, errorMessage));
+
+		render(GuessSubmission, { entryFee: 5 });
+
+		const input = screen.getByPlaceholderText('Enter your guess here');
+		await userEvent.type(input, 'bad guess');
+
+		const submitButton = screen.getByRole('button', { name: 'Submit Guess' });
+		await fireEvent.click(submitButton);
+
+		await waitFor(() => expect(alertStore.error).toHaveBeenCalledWith(errorMessage, 5000));
+		expect(input).toHaveValue('bad guess');
+	});
 
 	it('disables submit button while loading', async () => {
-		vi.spyOn(apiClient, 'apiFetch').mockImplementationOnce(
+		vi.spyOn(apiClient, 'submitGuess').mockImplementationOnce(
 			() => new Promise((resolve) => setTimeout(resolve, 100))
 		); // Simulate async
 		render(GuessSubmission);
