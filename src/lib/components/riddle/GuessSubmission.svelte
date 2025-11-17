@@ -80,7 +80,7 @@
 		on:retryPurchase={handleRetryPurchase}
 	/>
 {:else}
-	<div class="p-4 rounded-lg shadow-md bg-white border">
+	<div class="p-4 rounded-lg shadow-md bg-white border max-w-md mx-auto">
 		<h2 class="text-xl font-semibold mb-4">Submit Your Guess</h2>
 
 		<form on:submit|preventDefault={handleSubmit}>
