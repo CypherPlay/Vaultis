@@ -1,7 +1,7 @@
-import { writable, type Writable } from 'svelte/store';
+import { type Writable } from 'svelte/store';
 
 interface InfiniteScrollOptions {
-  callback: () => void;
+  callback: () => void | Promise<void>;
   loading: Writable<boolean>;
   threshold?: number; // Distance from bottom to trigger callback
 }
@@ -12,14 +12,25 @@ export function setupInfiniteScroll(options: InfiniteScrollOptions) {
   let unsubscribeLoading: () => void;
 
   const handleScroll = async () => {
+    if (isLoading) {
+      return;
+    }
+
     const scrollHeight = document.documentElement.scrollHeight;
     const scrollTop = document.documentElement.scrollTop;
     const clientHeight = document.documentElement.clientHeight;
 
-    if (scrollTop + clientHeight >= scrollHeight - threshold && !isLoading) {
+    if (scrollTop + clientHeight >= scrollHeight - threshold) {
+      isLoading = true;
       loading.set(true);
-      await callback();
-      loading.set(false);
+      try {
+        await callback();
+      } catch (error) {
+        console.error('Infinite scroll callback error:', error);
+      } finally {
+        loading.set(false);
+        isLoading = false;
+      }
     }
   };
 
