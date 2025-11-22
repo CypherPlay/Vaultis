@@ -2,7 +2,19 @@ import { apiClient } from '$lib/utils/apiClient';
 
 const PAGE_SIZE = 10; // Define your desired page size
 
-export async function fetchLeaderboardPage(type: string, page: number) {
+interface LeaderboardPage {
+  data: any[];
+  totalCount: number;
+  pageSize: number;
+}
+
+/**
+ * Fetches a page of leaderboard data.
+ * @param type The type of leaderboard to fetch (e.g., 'daily', 'weekly').
+ * @param page The 0-based index of the page to fetch.
+ * @returns A promise that resolves to a LeaderboardPage object.
+ */
+export async function fetchLeaderboardPage(type: string, page: number): Promise<LeaderboardPage> {
   if (typeof type !== 'string' || type.trim() === '') {
     throw new TypeError('Invalid parameter: "type" must be a non-empty string.');
   }
@@ -14,7 +26,8 @@ export async function fetchLeaderboardPage(type: string, page: number) {
   const limit = PAGE_SIZE;
 
   try {
-    const response = await apiClient.get(`/leaderboard/${type}?offset=${offset}&limit=${limit}`);
+    const encodedType = encodeURIComponent(type);
+    const response = await apiClient.get(`/leaderboard/${encodedType}?offset=${offset}&limit=${limit}`);
     return {
       data: response.data.entries,
       totalCount: response.data.totalCount,
