@@ -135,8 +135,15 @@ export async function submitGuess(data: {
 	});
 }
 
-export async function fetchLeaderboard<T extends 'daily-winners' | 'all-time-winners'>(type: T): Promise<
-	T extends 'daily-winners' ? DailyWinner[] : T extends 'all-time-winners' ? AllTimeWinner[] : never
-> {
-	return apiFetch<T extends 'daily-winners' ? DailyWinner[] : AllTimeWinner[]>(`/api/leaderboard/${type}`);
+export async function fetchLeaderboard<T extends 'daily-winners' | 'all-time-winners'>(
+	type: T,
+	offset: number = 0,
+	limit: number = 10
+): Promise<T extends 'daily-winners' ? DailyWinner[] : T extends 'all-time-winners' ? AllTimeWinner[] : never> {
+	const params = new URLSearchParams();
+	params.append('offset', String(offset));
+	params.append('limit', String(limit));
+	return apiFetch<T extends 'daily-winners' ? DailyWinner[] : AllTimeWinner[]>(
+		`/api/leaderboard/${type}?${params.toString()}`
+	);
 }
