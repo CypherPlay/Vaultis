@@ -27,9 +27,7 @@
 
     visibleItems = data.slice(startIndex, endIndex + 1);
 
-    container.style.height = `${containerHeight}px`;
-    container.style.overflowY = 'auto';
-    container.style.position = 'relative';
+
   }
 
   let resizeObserver: ResizeObserver;
@@ -53,11 +51,14 @@
   onDestroy(() => {
     if (container) {
       container.removeEventListener('scroll', calculateVisibleItems);
-      resizeObserver.unobserve(container);
+      if (resizeObserver) {
+        resizeObserver.unobserve(container);
+        resizeObserver.disconnect();
+      }
     }
   });
 
-  $: if (data && containerHeight) calculateVisibleItems();
+  $: if (data && containerHeight && itemHeight) calculateVisibleItems();
 </script>
 
 <div bind:this={container} class="virtual-list-container">
