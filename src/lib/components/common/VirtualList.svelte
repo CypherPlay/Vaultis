@@ -3,7 +3,7 @@
 
   export let itemHeight: number;
   export let data: any[];
-  export let render: (item: any) => any;
+
 
   let container: HTMLDivElement;
   let visibleItems: any[] = [];
