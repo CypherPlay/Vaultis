@@ -15,7 +15,6 @@
     if (!container) return;
 
     const scrollTop = container.scrollTop;
-    const totalHeight = data.length * itemHeight;
 
     startIndex = Math.floor(scrollTop / itemHeight);
     endIndex = Math.min(
@@ -55,12 +54,12 @@
     }
   });
 
-  $: data, itemHeight, containerHeight, calculateVisibleItems();
+  $: if (data && containerHeight) calculateVisibleItems();
 </script>
 
 <div bind:this={container} class="virtual-list-container">
   <div style="height: {data.length * itemHeight}px; position: relative;">
-    {#each visibleItems as item, i}
+    {#each visibleItems as item, i (startIndex + i)}
       <div
         style="position: absolute; top: {(startIndex + i) * itemHeight}px; height: {itemHeight}px; width: 100%;"
       >
