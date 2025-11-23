@@ -1,8 +1,11 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
 
+  type T = any;
+
   export let itemHeight: number;
-  export let data: any[];
+  export let data: T[];
+  export let render: (item: T) => any;
 
 
   let container: HTMLDivElement;
