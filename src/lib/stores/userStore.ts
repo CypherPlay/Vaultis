@@ -1,8 +1,16 @@
 import { writable, type Writable } from 'svelte/store';
 
+export interface UserProfile {
+	username: string;
+	totalGuesses: number;
+	correctGuesses: number;
+}
+
 export interface UserState {
 	sessionToken: string | null;
 	isAuthenticated: boolean;
+	user: UserProfile | null;
+	error: string | null;
 	riddleParticipation: Record<string, boolean>;
 }
 
@@ -10,6 +18,8 @@ export interface UserState {
 const initialUserState: UserState = {
 	sessionToken: null,
 	isAuthenticated: false,
+	user: null,
+	error: null,
 	riddleParticipation: {}
 };
 
@@ -41,10 +51,40 @@ function resetUserState() {
 	userStore.set(initialUserState);
 }
 
+async function fetchUserProfile() {
+	userStore.update((state) => ({ ...state, error: null })); // Clear previous errors
+	try {
+		// Simulate API call
+		const response = await new Promise<UserProfile>((resolve, reject) => {
+			setTimeout(() => {
+				const success = Math.random() > 0.2; // 80% chance of success
+				if (success) {
+					resolve({
+						username: 'TestUser',
+						totalGuesses: 100,
+						correctGuesses: 75
+					});
+				} else {
+					reject('Failed to fetch user profile');
+				}
+			}, 1000);
+		});
+		userStore.update((state) => ({ ...state, user: response, error: null }));
+	} catch (err) {
+		userStore.update((state) => ({ ...state, user: null, error: err as string }));
+	}
+}
+
+function clearError() {
+	userStore.update((state) => ({ ...state, error: null }));
+}
+
 // Export the store and helper functions
 export const user = {
 	subscribe: userStore.subscribe,
 	setSession,
 	updateRiddleParticipation,
-	resetUserState
+	resetUserState,
+	fetchUserProfile,
+	clearError
 };
