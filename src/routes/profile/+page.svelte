@@ -14,13 +14,16 @@
 	});
 </script>
 
-<div class="container mx-auto p-4 flex flex-col md:flex-row gap-4">
+<div class="p-4 md:flex-row gap-4 container mx-auto flex flex-col">
 	<!-- Sidebar for User Stats -->
 	<aside class="md:w-1/4 bg-gray-800 p-4 rounded-lg shadow-lg">
 		<h2 class="text-xl font-bold mb-4 text-white">User Stats</h2>
 		{#if error}
 			<p class="text-red-400">Error loading user stats: {error}</p>
-			<button on:click={user.fetchUserProfile} class="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Retry</button>
+			<button
+				on:click={user.fetchUserProfile}
+				class="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Retry</button
+			>
 		{:else if userData}
 			<p class="text-gray-300">Username: {userData.username}</p>
 			<p class="text-gray-300">Total Guesses: {userData.totalGuesses || 0}</p>

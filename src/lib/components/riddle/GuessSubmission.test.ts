@@ -43,7 +43,9 @@ describe('GuessSubmission', () => {
 	});
 
 	it('calls submitGuess on successful submission and clears input', async () => {
-		const submitGuessSpy = vi.spyOn(apiClient, 'submitGuess').mockResolvedValueOnce({ isCorrect: false, recordedTime: null, canRetry: true });
+		const submitGuessSpy = vi
+			.spyOn(apiClient, 'submitGuess')
+			.mockResolvedValueOnce({ isCorrect: false, recordedTime: null, canRetry: true });
 		render(GuessSubmission);
 
 		const input = screen.getByPlaceholderText('Enter your guess here');
