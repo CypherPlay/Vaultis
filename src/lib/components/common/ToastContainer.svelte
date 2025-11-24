@@ -3,7 +3,7 @@
   import type { Toast } from '../../stores/toastStore';
   import { fade } from 'svelte/transition';
 
-  function getToastClass(type: ToastType): string {
+  function getToastClass(type: Toast['type']): string {
     switch (type) {
       case 'success':
         return 'bg-green-500';
@@ -16,7 +16,7 @@
   }
 </script>
 
-<div class="fixed bottom-4 right-4 z-50 w-72 space-y-2">
+<div role="status" class="fixed bottom-4 right-4 z-50 w-72 space-y-2">
   {#each $toastStore as toast (toast.id)}
     <div
       in:fade={{ duration: 150 }}
