@@ -1,29 +1,29 @@
 export function infiniteScroll(node: HTMLElement, callback: () => void | Promise<void>) {
-  let observer: IntersectionObserver;
+	let observer: IntersectionObserver;
 
-  const init = () => {
-    const options = {
-      root: null, // Use the viewport as the root
-      rootMargin: '0px',
-      threshold: 0.1 // Trigger when 10% of the target is visible
-    };
+	const init = () => {
+		const options = {
+			root: null, // Use the viewport as the root
+			rootMargin: '0px',
+			threshold: 0.1 // Trigger when 10% of the target is visible
+		};
 
-    observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          void callback();
-        }
-      });
-    }, options);
+		observer = new IntersectionObserver((entries) => {
+			entries.forEach((entry) => {
+				if (entry.isIntersecting) {
+					void callback();
+				}
+			});
+		}, options);
 
-    observer.observe(node);
-  };
+		observer.observe(node);
+	};
 
-  init();
+	init();
 
-  return {
-    destroy() {
-      observer.disconnect();
-    }
-  };
+	return {
+		destroy() {
+			observer.disconnect();
+		}
+	};
 }

@@ -18,9 +18,7 @@
 	$: rankedAllTimeWinners = allTimeWinners.reduce((acc: AllTimeWinner[], winner, i) => {
 		const previousWinner = acc[i - 1];
 		const rank =
-			previousWinner && previousWinner.totalWins === winner.totalWins
-				? previousWinner.rank
-				: i + 1;
+			previousWinner && previousWinner.totalWins === winner.totalWins ? previousWinner.rank : i + 1;
 		acc.push({ ...winner, rank });
 		return acc;
 	}, []);
@@ -107,7 +105,6 @@
 			await fetchAllTimeWinners();
 		}
 	}
-
 </script>
 
 <div class="flex w-full flex-col items-center">
@@ -148,7 +145,7 @@
 		{#if activeTab === 'daily'}
 			<div role="tabpanel" id="panel-daily" aria-labelledby="tab-daily">
 				<h2 class="text-2xl font-semibold mb-4 text-primary-content">Daily Winners</h2>
-				<div class="overflow-x-auto max-h-96" use:infiniteScroll={fetchDailyWinners}>
+				<div class="max-h-96 overflow-x-auto" use:infiniteScroll={fetchDailyWinners}>
 					<table class="table w-full">
 						<thead>
 							<tr>
@@ -176,7 +173,7 @@
 								{/each}
 							{:else if !dailyHasMore && dailyWinners.length > 0}
 								<tr>
-									<td colspan="3" class="text-center text-gray-500 py-4">
+									<td colspan="3" class="text-gray-500 py-4 text-center">
 										No more daily winners.
 									</td>
 								</tr>
@@ -199,7 +196,7 @@
 		{:else}
 			<div role="tabpanel" id="panel-all-time" aria-labelledby="tab-all-time">
 				<h2 class="text-2xl font-semibold mb-4 text-primary-content">All-Time Ranks</h2>
-				<div class="overflow-x-auto max-h-96" use:infiniteScroll={fetchAllTimeWinners}>
+				<div class="max-h-96 overflow-x-auto" use:infiniteScroll={fetchAllTimeWinners}>
 					<table class="table w-full">
 						<thead>
 							<tr>
@@ -230,7 +227,7 @@
 								{/each}
 							{:else if !allTimeHasMore && allTimeWinners.length > 0}
 								<tr>
-									<td colspan="4" class="text-center text-gray-500 py-4">
+									<td colspan="4" class="text-gray-500 py-4 text-center">
 										No more all-time ranks.
 									</td>
 								</tr>
