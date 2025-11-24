@@ -98,12 +98,12 @@
     });
 
     it('renders correctly with no guesses', () => {
-      render(GuessHistory, { props: { guesses: [], totalItems: 0 } });
+      render(GuessHistory, { props: { guesses: [] } });
       expect(screen.getByText('No guesses yet.')).toBeInTheDocument();
     });
 
     it('renders a list of guesses with pagination', async () => {
-      render(GuessHistory, { props: { guesses: mockGuesses, totalItems: mockGuesses.length, itemsPerPage: 5 } });
+      render(GuessHistory, { props: { guesses: mockGuesses, itemsPerPage: 5 } });
 
       // Check initial page (page 1)
       expect(screen.getByText(new Date(mockGuesses[0].timestamp).toLocaleString())).toBeInTheDocument();
@@ -127,7 +127,7 @@
     });
 
     it('dispatches pageChange event when page is changed', async () => {
-      render(GuessHistory, { props: { guesses: mockGuesses, totalItems: mockGuesses.length, itemsPerPage: 5 } });
+      render(GuessHistory, { props: { guesses: mockGuesses, itemsPerPage: 5 } });
 
       const nextButton = screen.getByRole('button', { name: '›' });
       await fireEvent.click(nextButton);
