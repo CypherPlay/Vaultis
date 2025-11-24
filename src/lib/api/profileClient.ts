@@ -40,6 +40,13 @@ export async function fetchProfile(): Promise<UserProfile> {
  * @returns A promise that resolves to a PaginatedGuessHistory object.
  */
 export async function fetchGuessHistory(page: number = 0, limit: number = 10): Promise<PaginatedGuessHistory> {
+    if (page < 0) {
+        throw new Error('Page number cannot be negative.');
+    }
+    if (limit < 1) {
+        throw new Error('Limit must be at least 1.');
+    }
+
     const params = new URLSearchParams();
     params.append('page', String(page));
     params.append('limit', String(limit));
