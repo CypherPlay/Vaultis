@@ -8,28 +8,45 @@
 
   const dispatch = createEventDispatcher();
 
+  import { afterUpdate, onDestroy } from 'svelte';
+
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      dispatch('close');
+    }
+  }
+
+  afterUpdate(() => {
+    if (showModal) {
+      window.addEventListener('keydown', handleKeydown);
+    } else {
+      window.removeEventListener('keydown', handleKeydown);
+    }
+  });
+
+  onDestroy(() => {
+    window.removeEventListener('keydown', handleKeydown);
+  });
+
   function closeModal() {
-    showModal = false;
     dispatch('close');
   }
 
   function confirm() {
     dispatch('confirm');
-    closeModal();
   }
 
   function retry() {
     dispatch('retry');
-    closeModal();
   }
 </script>
 
 {#if showModal}
   <div class="modal-overlay" on:click={closeModal}>
-    <div class="modal-content" on:click|stopPropagation>
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modal-title" tabindex="-1" on:click|stopPropagation>
       <header>
-        <h2>{title}</h2>
-        <button class="close-button" on:click={closeModal}>&times;</button>
+        <h2 id="modal-title">{title}</h2>
+        <button class="close-button" aria-label="Close modal" on:click={closeModal}>&times;</button>
       </header>
       <main>
         {#if type !== 'custom'}
