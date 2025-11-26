@@ -1,5 +1,6 @@
 import { get } from 'svelte/store';
 import { user } from '$lib/stores/userStore';
+import { toastStore } from '$lib/stores/toastStore';
 
 const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -86,14 +87,15 @@ export async function apiFetch<T = unknown>(
 		const opts: RequestInit = init ? { ...init, headers } : { headers };
 		response = await fetch(url, opts);
 	} catch (err: unknown) {
-		throw new Error(
-			`Network error: ${err instanceof Error ? err.message : 'Unknown network error'}`,
-			{ cause: err }
-		);
+		const errorMessage = `Network error: ${err instanceof Error ? err.message : 'Unknown network error'}`;
+		toastStore.error(errorMessage);
+		throw new Error(errorMessage, { cause: err });
 	}
 
 	if (response.status === 401) {
-		throw new ApiError(401, 'Authentication failed: session expired or invalid.');
+		const errorMessage = 'Authentication failed: session expired or invalid.';
+		toastStore.error(errorMessage);
+		throw new ApiError(401, errorMessage);
 	}
 
 	const contentType = response.headers.get('content-type')?.toLowerCase() || '';
@@ -105,15 +107,24 @@ export async function apiFetch<T = unknown>(
 
 		try {
 			errorBody = isJson ? await response.json() : await response.text();
-		} catch {
-			// ignore parse errors
+		} catch (parseError) {
+			// If parsing fails, use a generic error message
+			const errorMessage = `API error ${response.status}: ${response.statusText || 'Unknown error'}`;
+			toastStore.error(errorMessage);
+			throw new ApiError(response.status, errorMessage, errorBody);
 		}
 
-		throw new ApiError(
-			response.status,
-			`API error ${response.status}: ${response.statusText || 'Unknown error'}`,
-			errorBody
-		);
+		const errorMessage =
+			(errorBody && typeof errorBody === 'object' && 'message' in errorBody && errorBody.message) ||
+			`API error ${response.status}: ${response.statusText || 'Unknown error'}`;
+		toastStore.error(errorMessage as string);
+		throw new ApiError(response.status, errorMessage as string, errorBody);
+	}
+
+	// Only show success toast for non-GET requests, or if explicitly requested
+	const isGetRequest = init?.method === undefined || init.method === 'GET';
+	if (!isGetRequest) {
+		toastStore.success('Operation successful!');
 	}
 
 	if (isJson) {
