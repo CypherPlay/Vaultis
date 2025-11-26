@@ -1,5 +1,6 @@
 import { get } from 'svelte/store';
 import { user } from '$lib/stores/userStore';
+import { toastStore } from '$lib/stores/toastStore';
 
 const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -48,6 +49,10 @@ export class ApiError extends Error {
 	}
 }
 
+export interface ApiFetchOptions extends RequestInit {
+	successMessage?: string;
+}
+
 /**
  * Authenticated API client for making fetch requests.
  * It automatically attaches the access token
@@ -57,7 +62,7 @@ export class ApiError extends Error {
  */
 export async function apiFetch<T = unknown>(
 	input: RequestInfo,
-	init?: RequestInit
+	init?: ApiFetchOptions
 ): Promise<ApiResponse<T>> {
 	const { sessionToken } = get(user);
 	const headers = new Headers(init?.headers);
@@ -86,14 +91,15 @@ export async function apiFetch<T = unknown>(
 		const opts: RequestInit = init ? { ...init, headers } : { headers };
 		response = await fetch(url, opts);
 	} catch (err: unknown) {
-		throw new Error(
-			`Network error: ${err instanceof Error ? err.message : 'Unknown network error'}`,
-			{ cause: err }
-		);
+		const errorMessage = `Network error: ${err instanceof Error ? err.message : 'Unknown network error'}`;
+		toastStore.error(errorMessage);
+		throw new Error(errorMessage, { cause: err });
 	}
 
 	if (response.status === 401) {
-		throw new ApiError(401, 'Authentication failed: session expired or invalid.');
+		const errorMessage = 'Authentication failed: session expired or invalid.';
+		toastStore.error(errorMessage);
+		throw new ApiError(401, errorMessage);
 	}
 
 	const contentType = response.headers.get('content-type')?.toLowerCase() || '';
@@ -105,15 +111,43 @@ export async function apiFetch<T = unknown>(
 
 		try {
 			errorBody = isJson ? await response.json() : await response.text();
-		} catch {
-			// ignore parse errors
+		} catch (parseError) {
+			// If parsing fails, use a generic error message
+			const errorMessage = `API error ${response.status}: ${response.statusText || 'Unknown error'}`;
+			toastStore.error(errorMessage);
+			throw new ApiError(response.status, errorMessage, errorBody);
 		}
 
-		throw new ApiError(
-			response.status,
-			`API error ${response.status}: ${response.statusText || 'Unknown error'}`,
-			errorBody
-		);
+		const errorMessage =
+			(errorBody && typeof errorBody === 'object' && 'message' in errorBody && typeof (errorBody as { message: unknown }).message === 'string' && (errorBody as { message: string }).message) ||
+			`API error ${response.status}: ${response.statusText || 'Unknown error'}`;
+		toastStore.error(errorMessage);
+		throw new ApiError(response.status, errorMessage, errorBody);
+	}
+
+	const normalizedMethod = init?.method?.toUpperCase();
+	const isGetRequest = normalizedMethod === undefined || normalizedMethod === 'GET';
+
+	if (!isGetRequest) {
+		let successMessage = init?.successMessage;
+		if (!successMessage) {
+			switch (normalizedMethod) {
+				case 'POST':
+					successMessage = 'Created successfully!';
+					break;
+				case 'PUT':
+				case 'PATCH':
+					successMessage = 'Updated successfully!';
+					break;
+				case 'DELETE':
+					successMessage = 'Deleted successfully!';
+					break;
+				default:
+					successMessage = 'Operation successful!';
+					break;
+			}
+		}
+		toastStore.success(successMessage);
 	}
 
 	if (isJson) {
