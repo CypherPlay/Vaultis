@@ -49,6 +49,10 @@ export class ApiError extends Error {
 	}
 }
 
+export interface ApiFetchOptions extends RequestInit {
+	successMessage?: string;
+}
+
 /**
  * Authenticated API client for making fetch requests.
  * It automatically attaches the access token
@@ -58,7 +62,7 @@ export class ApiError extends Error {
  */
 export async function apiFetch<T = unknown>(
 	input: RequestInfo,
-	init?: RequestInit
+	init?: ApiFetchOptions
 ): Promise<ApiResponse<T>> {
 	const { sessionToken } = get(user);
 	const headers = new Headers(init?.headers);
@@ -115,16 +119,35 @@ export async function apiFetch<T = unknown>(
 		}
 
 		const errorMessage =
-			(errorBody && typeof errorBody === 'object' && 'message' in errorBody && errorBody.message) ||
+			(errorBody && typeof errorBody === 'object' && 'message' in errorBody && typeof (errorBody as { message: unknown }).message === 'string' && (errorBody as { message: string }).message) ||
 			`API error ${response.status}: ${response.statusText || 'Unknown error'}`;
-		toastStore.error(errorMessage as string);
-		throw new ApiError(response.status, errorMessage as string, errorBody);
+		toastStore.error(errorMessage);
+		throw new ApiError(response.status, errorMessage, errorBody);
 	}
 
-	// Only show success toast for non-GET requests, or if explicitly requested
-	const isGetRequest = init?.method === undefined || init.method === 'GET';
+	const normalizedMethod = init?.method?.toUpperCase();
+	const isGetRequest = normalizedMethod === undefined || normalizedMethod === 'GET';
+
 	if (!isGetRequest) {
-		toastStore.success('Operation successful!');
+		let successMessage = init?.successMessage;
+		if (!successMessage) {
+			switch (normalizedMethod) {
+				case 'POST':
+					successMessage = 'Created successfully!';
+					break;
+				case 'PUT':
+				case 'PATCH':
+					successMessage = 'Updated successfully!';
+					break;
+				case 'DELETE':
+					successMessage = 'Deleted successfully!';
+					break;
+				default:
+					successMessage = 'Operation successful!';
+					break;
+			}
+		}
+		toastStore.success(successMessage);
 	}
 
 	if (isJson) {
